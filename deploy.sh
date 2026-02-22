@@ -14,9 +14,9 @@ GITHUB_REPO="https://github.com/candrabudi/mono-buka-outlet.git"
 BRANCH="master"
 
 # Domain paths
-PANEL_DEPLOY="/home/apbo.dinanfarm.com"
+PANEL_DEPLOY="/home/apbo.dinanfarm.com/public_html"
 API_DEPLOY="/home/apibo.dinanfarm.com"
-MITRA_DEPLOY="/home/merbo.dinanfarm.com"
+MITRA_DEPLOY="/home/merbo.dinanfarm.com/public_html"
 
 # Domain URLs (untuk .env frontend)
 PANEL_DOMAIN="https://apbo.dinanfarm.com"
