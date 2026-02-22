@@ -199,11 +199,9 @@ func (h *OutletHandler) PublicList(c *gin.Context) {
 }
 
 func (h *OutletHandler) PublicDetail(c *gin.Context) {
-	// Try by slug first, then by ID
 	param := c.Param("id")
 	id, err := uuid.Parse(param)
 	if err != nil {
-		// Try slug
 		outlet, err := h.outletUC.GetBySlug(c.Request.Context(), param)
 		if err != nil {
 			c.JSON(http.StatusNotFound, gin.H{"error": "Outlet tidak ditemukan"})

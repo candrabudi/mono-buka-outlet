@@ -170,3 +170,11 @@ type InvoiceRepository interface {
 	ManualApprove(ctx context.Context, id uuid.UUID, proofURL string) error
 	GenerateInvoiceNumber(ctx context.Context) (string, error)
 }
+
+type PartnershipApplicationRepository interface {
+	Create(ctx context.Context, app *entity.PartnershipApplication) error
+	FindByID(ctx context.Context, id uuid.UUID) (*entity.PartnershipApplication, error)
+	FindByMitraID(ctx context.Context, mitraID uuid.UUID) ([]*entity.PartnershipApplication, error)
+	FindAll(ctx context.Context, status string, page, limit int) ([]*entity.PartnershipApplication, int, error)
+	UpdateStatus(ctx context.Context, id uuid.UUID, status, adminNotes string, reviewedBy uuid.UUID) error
+}

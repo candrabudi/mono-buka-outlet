@@ -46,6 +46,22 @@ func (h *AuthHandler) Register(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"success": true, "data": resp})
 }
 
+// MitraRegister forces role to "mitra" for public self-registration
+func (h *AuthHandler) MitraRegister(c *gin.Context) {
+	var req usecase.RegisterRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": err.Error()})
+		return
+	}
+	req.Role = "mitra" // Force role to mitra
+	resp, err := h.authUC.Register(c.Request.Context(), req)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusCreated, gin.H{"success": true, "data": resp, "message": "Registrasi berhasil"})
+}
+
 func (h *AuthHandler) Profile(c *gin.Context) {
 	userID := c.MustGet("user_id").(uuid.UUID)
 	user, err := h.authUC.GetProfile(c.Request.Context(), userID)

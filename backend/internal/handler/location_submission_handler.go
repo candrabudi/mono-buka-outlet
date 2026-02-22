@@ -391,3 +391,14 @@ func (h *LocationSubmissionHandler) RecalculateScore(c *gin.Context) {
 	updated, _ := h.repo.FindByID(c.Request.Context(), id)
 	c.JSON(http.StatusOK, gin.H{"data": updated})
 }
+
+// ─── GET BY MITRA ───
+func (h *LocationSubmissionHandler) GetByMitra(c *gin.Context) {
+	mitraID := c.MustGet("user_id").(uuid.UUID)
+	list, err := h.repo.FindByMitraID(c.Request.Context(), mitraID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"success": true, "data": list})
+}

@@ -230,3 +230,25 @@ func (h *InvoiceHandler) MidtransWebhook(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"status": "ok"})
 }
+
+// GetByMitra — returns all invoices across mitra's partnerships
+func (h *InvoiceHandler) GetByMitra(c *gin.Context) {
+	userID := c.MustGet("user_id").(uuid.UUID)
+	partnerships, err := h.partnershipRepo.FindByMitraID(c.Request.Context(), userID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	var all []*entity.Invoice
+	for _, p := range partnerships {
+		invoices, err := h.invoiceRepo.FindByPartnershipID(c.Request.Context(), p.ID)
+		if err != nil {
+			continue
+		}
+		all = append(all, invoices...)
+	}
+	if all == nil {
+		all = []*entity.Invoice{}
+	}
+	c.JSON(http.StatusOK, gin.H{"success": true, "data": all})
+}

@@ -19,7 +19,6 @@ func (h *SettingHandler) GetAll(c *gin.Context) {
 	group := c.Query("group")
 	var err error
 	var data interface{}
-
 	if group != "" {
 		data, err = h.repo.FindByGroup(c.Request.Context(), group)
 	} else {

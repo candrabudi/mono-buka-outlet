@@ -18,27 +18,23 @@ import (
 )
 
 func main() {
-	// CLI flags
 	migrateUp := flag.Bool("migrate", false, "Run database migrations")
 	migrateDown := flag.Bool("migrate-down", false, "Rollback database migrations")
 	migrateFresh := flag.Bool("migrate-fresh", false, "Fresh migration (drop all + migrate)")
 	seed := flag.Bool("seed", false, "Run database seeders")
 	flag.Parse()
 
-	// Load config
 	cfg, err := config.Load()
 	if err != nil {
 		log.Fatalf("❌ Failed to load config: %v", err)
 	}
 
-	// Connect database
 	db, err := config.NewDatabase(cfg.Database)
 	if err != nil {
 		log.Fatalf("❌ Failed to connect database: %v", err)
 	}
 	defer db.Close()
 
-	// Migration commands
 	migrator := migration.NewMigrator(db, "./migrations")
 
 	if *migrateUp {
@@ -74,7 +70,6 @@ func main() {
 		os.Exit(0)
 	}
 
-	// Initialize repositories
 	userRepo := postgres.NewUserRepo(db)
 	outletRepo := postgres.NewOutletRepo(db)
 	outletCategoryRepo := postgres.NewOutletCategoryRepo(db)
@@ -91,8 +86,8 @@ func main() {
 	settingRepo := postgres.NewSystemSettingRepo(db)
 	invoiceRepo := postgres.NewInvoiceRepo(db)
 	locationSubRepo := postgres.NewLocationSubmissionRepo(db)
+	partnershipAppRepo := postgres.NewPartnershipApplicationRepo(db)
 
-	// Initialize services
 	emailService := email.NewEmailService(email.SMTPConfig{
 		Host:     cfg.SMTP.Host,
 		Port:     cfg.SMTP.Port,
@@ -102,10 +97,8 @@ func main() {
 		FromName: cfg.SMTP.FromName,
 	})
 
-	// Initialize use cases
 	authUC := usecase.NewAuthUseCase(userRepo, cfg.JWT.Secret, cfg.JWT.ExpiryHours)
 	adminAuthUC := usecase.NewAdminAuthUseCase(userRepo, otpRepo, emailService, cfg.JWT.Secret, cfg.JWT.ExpiryHours)
-
 	outletUC := usecase.NewOutletUseCase(outletRepo, outletCategoryRepo)
 	outletCategoryUC := usecase.NewOutletCategoryUseCase(outletCategoryRepo)
 	outletPackageUC := usecase.NewOutletPackageUseCase(outletPackageRepo)
@@ -117,10 +110,10 @@ func main() {
 	dashboardUC := usecase.NewDashboardUseCase(dashboardRepo)
 	meetingUC := usecase.NewMeetingUseCase(meetingRepo)
 
-	// Initialize handlers
 	handlers := router.Handlers{
 		Auth:      handler.NewAuthHandler(authUC),
 		AdminAuth: handler.NewAdminAuthHandler(adminAuthUC),
+		Mitra:     handler.NewMitraHandler(partnershipAppRepo, outletRepo, outletPackageRepo, partnershipRepo),
 
 		Outlet:         handler.NewOutletHandler(outletUC),
 		OutletCategory: handler.NewOutletCategoryHandler(outletCategoryUC),
@@ -138,20 +131,16 @@ func main() {
 		LocationSub:    handler.NewLocationSubmissionHandler(locationSubRepo),
 	}
 
-	// Setup Gin
 	if cfg.App.Env == "production" {
 		gin.SetMode(gin.ReleaseMode)
 	}
 	r := gin.Default()
 
-	// Setup routes
 	router.Setup(r, handlers, cfg.JWT.Secret, cfg.CORS.AllowedOrigins)
 
-	// Create uploads directory
 	os.MkdirAll(cfg.Upload.Dir, os.ModePerm)
 	r.Static("/uploads", cfg.Upload.Dir)
 
-	// Start server
 	log.Printf("🚀 Server starting on port %s", cfg.App.Port)
 	if err := r.Run(":" + cfg.App.Port); err != nil {
 		log.Fatalf("❌ Server failed: %v", err)

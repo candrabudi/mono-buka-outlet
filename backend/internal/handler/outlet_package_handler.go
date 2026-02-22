@@ -23,7 +23,6 @@ func (h *OutletPackageHandler) Create(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Data tidak valid"})
 		return
 	}
-
 	pkg, errs := h.uc.Create(c.Request.Context(), req)
 	if errs != nil {
 		c.JSON(http.StatusUnprocessableEntity, gin.H{"errors": errs})
@@ -38,7 +37,6 @@ func (h *OutletPackageHandler) GetByOutletID(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "ID outlet tidak valid"})
 		return
 	}
-
 	packages, err := h.uc.GetByOutletID(c.Request.Context(), outletID)
 	if err != nil {
 		log.Printf("❌ GetByOutletID error: %v", err)
@@ -54,7 +52,6 @@ func (h *OutletPackageHandler) GetByID(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "ID tidak valid"})
 		return
 	}
-
 	pkg, err := h.uc.GetByID(c.Request.Context(), id)
 	if err != nil || pkg == nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Paket tidak ditemukan"})
@@ -69,13 +66,11 @@ func (h *OutletPackageHandler) Update(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "ID tidak valid"})
 		return
 	}
-
 	var req usecase.CreateOutletPackageRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Data tidak valid"})
 		return
 	}
-
 	pkg, errs := h.uc.Update(c.Request.Context(), id, req)
 	if errs != nil {
 		c.JSON(http.StatusUnprocessableEntity, gin.H{"errors": errs})
@@ -90,7 +85,6 @@ func (h *OutletPackageHandler) Delete(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "ID tidak valid"})
 		return
 	}
-
 	if err := h.uc.Delete(c.Request.Context(), id); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal menghapus paket"})
 		return

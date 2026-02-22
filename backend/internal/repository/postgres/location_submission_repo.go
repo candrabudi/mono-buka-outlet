@@ -213,6 +213,28 @@ func (r *LocationSubmissionRepo) FindByPartnership(ctx context.Context, partners
 	return results, nil
 }
 
+func (r *LocationSubmissionRepo) FindByMitraID(ctx context.Context, mitraID uuid.UUID) ([]*entity.LocationSubmission, error) {
+	query := fmt.Sprintf(`SELECT %s FROM location_submissions ls WHERE ls.mitra_id=$1 AND ls.deleted_at IS NULL ORDER BY ls.created_at DESC`, locSubmissionCols)
+	rows, err := r.db.QueryContext(ctx, query, mitraID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var results []*entity.LocationSubmission
+	for rows.Next() {
+		ls, err := scanSubmission(rows)
+		if err != nil {
+			return nil, err
+		}
+		results = append(results, ls)
+	}
+	if results == nil {
+		results = []*entity.LocationSubmission{}
+	}
+	return results, nil
+}
+
 // ---------- SURVEYS ----------
 
 func (r *LocationSubmissionRepo) CreateSurvey(ctx context.Context, s *entity.LocationSurvey) error {
