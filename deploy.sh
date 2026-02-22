@@ -25,7 +25,7 @@ MITRA_DOMAIN="https://merbo.dinanfarm.com"
 
 # Backend
 PM2_APP_NAME="bukaoutlet-api"
-API_PORT="8080"
+API_PORT="9147"
 
 # Database
 DB_HOST="localhost"
