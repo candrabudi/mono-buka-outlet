@@ -36,6 +36,8 @@ export const authApi = {
   resendOtp: (data) => api.post('/auth/resend-otp', data),
   register: (data) => api.post('/auth/register', data),
   profile: () => api.get('/profile'),
+  updateProfile: (data) => api.put('/profile', data),
+  changePassword: (data) => api.post('/change-password', data),
 }
 
 // Outlets (browsing)

@@ -181,10 +181,9 @@ func (uc *AuthUseCase) generateToken(user *entity.User) (string, error) {
 }
 
 type UpdateUserRequest struct {
-	Name     string `json:"name"`
-	Email    string `json:"email"`
-	Phone    string `json:"phone"`
-	Password string `json:"password"`
+	Name  string `json:"name"`
+	Email string `json:"email"`
+	Phone string `json:"phone"`
 }
 
 func (uc *AuthUseCase) UpdateUser(ctx context.Context, id uuid.UUID, req UpdateUserRequest) (*entity.User, error) {
@@ -193,7 +192,10 @@ func (uc *AuthUseCase) UpdateUser(ctx context.Context, id uuid.UUID, req UpdateU
 		return nil, fmt.Errorf("user tidak ditemukan")
 	}
 	if req.Name != "" {
-		user.Name = req.Name
+		if len(strings.TrimSpace(req.Name)) < 3 {
+			return nil, fmt.Errorf("nama minimal 3 karakter")
+		}
+		user.Name = strings.TrimSpace(req.Name)
 	}
 	if req.Email != "" && req.Email != user.Email {
 		existing, _ := uc.userRepo.FindByEmail(ctx, req.Email)
@@ -203,20 +205,79 @@ func (uc *AuthUseCase) UpdateUser(ctx context.Context, id uuid.UUID, req UpdateU
 		user.Email = req.Email
 	}
 	if req.Phone != "" {
-		user.Phone = req.Phone
-	}
-	if req.Password != "" {
-		hashed, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
-		if err != nil {
-			return nil, fmt.Errorf("gagal hash password")
+		phone := strings.ReplaceAll(req.Phone, " ", "")
+		phone = strings.ReplaceAll(phone, "-", "")
+		phoneRegex := regexp.MustCompile(`^(\+62|62|08)[0-9]{8,13}$`)
+		if !phoneRegex.MatchString(phone) {
+			return nil, fmt.Errorf("format nomor handphone tidak valid")
 		}
-		user.Password = string(hashed)
+		user.Phone = req.Phone
 	}
 	user.UpdatedAt = time.Now()
 	if err := uc.userRepo.Update(ctx, user); err != nil {
 		return nil, fmt.Errorf("gagal update user: %w", err)
 	}
 	return user, nil
+}
+
+// ChangePasswordRequest is the request body for password change
+type ChangePasswordRequest struct {
+	OldPassword        string `json:"old_password" binding:"required"`
+	NewPassword        string `json:"new_password" binding:"required,min=8"`
+	ConfirmNewPassword string `json:"confirm_new_password" binding:"required"`
+}
+
+// ChangePassword validates old password and updates to a strong new password
+func (uc *AuthUseCase) ChangePassword(ctx context.Context, userID uuid.UUID, req ChangePasswordRequest) error {
+	user, err := uc.userRepo.FindByID(ctx, userID)
+	if err != nil {
+		return fmt.Errorf("user tidak ditemukan")
+	}
+
+	// Verify old password
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.OldPassword)); err != nil {
+		return fmt.Errorf("password lama salah")
+	}
+
+	// Validate new password strength
+	if len(req.NewPassword) < 8 {
+		return fmt.Errorf("password baru minimal 8 karakter")
+	}
+	var hasUpper, hasLower, hasDigit bool
+	for _, r := range req.NewPassword {
+		switch {
+		case unicode.IsUpper(r):
+			hasUpper = true
+		case unicode.IsLower(r):
+			hasLower = true
+		case unicode.IsDigit(r):
+			hasDigit = true
+		}
+	}
+	if !hasUpper || !hasLower || !hasDigit {
+		return fmt.Errorf("password baru harus mengandung huruf besar, huruf kecil, dan angka")
+	}
+
+	// Confirm match
+	if req.NewPassword != req.ConfirmNewPassword {
+		return fmt.Errorf("konfirmasi password tidak cocok")
+	}
+
+	// Check not same as old
+	if req.OldPassword == req.NewPassword {
+		return fmt.Errorf("password baru tidak boleh sama dengan password lama")
+	}
+
+	hashed, err := bcrypt.GenerateFromPassword([]byte(req.NewPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return fmt.Errorf("gagal hash password")
+	}
+	user.Password = string(hashed)
+	user.UpdatedAt = time.Now()
+	if err := uc.userRepo.Update(ctx, user); err != nil {
+		return fmt.Errorf("gagal update password: %w", err)
+	}
+	return nil
 }
 
 func (uc *AuthUseCase) DeleteUser(ctx context.Context, id uuid.UUID) error {

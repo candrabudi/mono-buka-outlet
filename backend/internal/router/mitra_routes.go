@@ -30,6 +30,8 @@ func RegisterMitraRoutes(r *gin.Engine, h Handlers, jwtSecret string) {
 		mitraProtected.Use(middleware.JWTAuth(jwtSecret))
 		{
 			mitraProtected.GET("/profile", h.Auth.Profile)
+			mitraProtected.PUT("/profile", h.Auth.UpdateMyProfile)
+			mitraProtected.POST("/change-password", h.Auth.ChangeMyPassword)
 
 			// Outlets browsing
 			mitraProtected.GET("/outlets", h.Mitra.ListOutlets)

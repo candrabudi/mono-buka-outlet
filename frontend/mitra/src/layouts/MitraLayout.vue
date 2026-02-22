@@ -82,6 +82,7 @@ const pageTitles = {
   Invoices: 'Invoice',
   Agreements: 'Agreement',
   Locations: 'Pengajuan Lokasi',
+  Settings: 'Pengaturan Profil',
 }
 const pageSubtitles = {
   Dashboard: 'Pantau perkembangan kemitraan Anda',
@@ -92,6 +93,7 @@ const pageSubtitles = {
   Invoices: 'Riwayat tagihan & pembayaran',
   Agreements: 'Dokumen perjanjian kemitraan',
   Locations: 'Pengajuan & status lokasi outlet',
+  Settings: 'Kelola informasi akun & keamanan',
 }
 
 const pageTitle = computed(() => pageTitles[route.name] || '')

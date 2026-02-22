@@ -19,6 +19,7 @@ const routes = [
       { path: 'invoices', name: 'Invoices', component: () => import('../pages/Invoices.vue') },
       { path: 'agreements', name: 'Agreements', component: () => import('../pages/Agreements.vue') },
       { path: 'locations', name: 'Locations', component: () => import('../pages/Locations.vue') },
+      { path: 'settings', name: 'Settings', component: () => import('../pages/Settings.vue') },
     ],
   },
 

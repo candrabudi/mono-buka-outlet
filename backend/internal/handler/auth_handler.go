@@ -72,6 +72,37 @@ func (h *AuthHandler) Profile(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"success": true, "data": user})
 }
 
+// UpdateMyProfile — mitra updates their own profile (name, email, phone)
+func (h *AuthHandler) UpdateMyProfile(c *gin.Context) {
+	userID := c.MustGet("user_id").(uuid.UUID)
+	var req usecase.UpdateUserRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": err.Error()})
+		return
+	}
+	user, err := h.authUC.UpdateUser(c.Request.Context(), userID, req)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"success": true, "data": user, "message": "Profil berhasil diupdate"})
+}
+
+// ChangeMyPassword — mitra changes their own password (old pw required)
+func (h *AuthHandler) ChangeMyPassword(c *gin.Context) {
+	userID := c.MustGet("user_id").(uuid.UUID)
+	var req usecase.ChangePasswordRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": err.Error()})
+		return
+	}
+	if err := h.authUC.ChangePassword(c.Request.Context(), userID, req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"success": true, "message": "Password berhasil diubah"})
+}
+
 func (h *AuthHandler) ListUsers(c *gin.Context) {
 	role := c.Query("role")
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
