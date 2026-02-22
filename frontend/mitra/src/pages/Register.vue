@@ -167,7 +167,6 @@ const canSubmit = computed(() => {
   return form.name.trim().length >= 3
     && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)
     && form.password.length >= 8
-    && pwChecks.value.upper && pwChecks.value.lower && pwChecks.value.digit
     && form.password === form.confirm_password
     && Object.keys(errors.value).length === 0
 })
