@@ -205,6 +205,15 @@ ok "Seeders done (existing data skipped)"
 # Start/Restart with PM2
 log "⚡ Starting backend with PM2..."
 cd "$API_DEPLOY"
+
+# Kill anything using the port
+PORT_PID=$(lsof -ti:$API_PORT 2>/dev/null || true)
+if [ -n "$PORT_PID" ]; then
+  kill -9 $PORT_PID 2>/dev/null || true
+  ok "Killed existing process on port $API_PORT"
+  sleep 1
+fi
+
 if pm2 describe "$PM2_APP_NAME" > /dev/null 2>&1; then
   pm2 restart "$PM2_APP_NAME"
   ok "Backend restarted (PM2: $PM2_APP_NAME)"
