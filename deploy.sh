@@ -172,6 +172,12 @@ ok "Backend binary built"
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 log "📦 Deploying backend..."
 
+# Stop PM2 if running (avoids "Text file busy")
+if pm2 describe "$PM2_APP_NAME" > /dev/null 2>&1; then
+  pm2 stop "$PM2_APP_NAME" 2>/dev/null || true
+  ok "PM2 process stopped"
+fi
+
 # Copy binary
 cp "$REPO_DIR/backend/bukaoutlet-api" "$API_DEPLOY/bukaoutlet-api"
 
