@@ -165,29 +165,45 @@
           <div class="ad-status-card">
             <h3 class="ad-status-title">Status Pengajuan</h3>
             <div class="ad-timeline">
-              <div class="ad-tl-item" :class="{ active: true, done: true }">
+              <!-- Step 1: Submitted (always done) -->
+              <div class="ad-tl-item active done">
                 <div class="ad-tl-dot"></div>
                 <div class="ad-tl-content">
                   <div class="ad-tl-label">Pengajuan Dikirim</div>
                   <div class="ad-tl-date">{{ formatDate(app.created_at) }}</div>
                 </div>
               </div>
-              <div class="ad-tl-item" :class="{ active: isReviewed, done: isReviewed }">
-                <div class="ad-tl-dot"></div>
-                <div class="ad-tl-content">
-                  <div class="ad-tl-label">Sedang Direview</div>
-                  <div class="ad-tl-date" v-if="app.reviewed_at">{{ formatDate(app.reviewed_at) }}</div>
-                  <div class="ad-tl-date" v-else>Menunggu</div>
+
+              <!-- CANCELLED flow: show cancelled step directly -->
+              <template v-if="app.status === 'CANCELLED'">
+                <div class="ad-tl-item active done cancelled">
+                  <div class="ad-tl-dot"></div>
+                  <div class="ad-tl-content">
+                    <div class="ad-tl-label">Dibatalkan oleh Mitra</div>
+                    <div class="ad-tl-date">{{ formatDate(app.updated_at) }}</div>
+                  </div>
                 </div>
-              </div>
-              <div class="ad-tl-item" :class="{ active: isFinal, done: isFinal, approved: app.status === 'APPROVED', rejected: app.status === 'REJECTED' }">
-                <div class="ad-tl-dot"></div>
-                <div class="ad-tl-content">
-                  <div class="ad-tl-label">{{ app.status === 'REJECTED' ? 'Ditolak' : app.status === 'APPROVED' ? 'Disetujui' : 'Keputusan' }}</div>
-                  <div class="ad-tl-date" v-if="app.reviewed_at && isFinal">{{ formatDate(app.reviewed_at) }}</div>
-                  <div class="ad-tl-date" v-else>Menunggu</div>
+              </template>
+
+              <!-- Normal flow: Review → Decision -->
+              <template v-else>
+                <div class="ad-tl-item" :class="{ active: isReviewed, done: isReviewed }">
+                  <div class="ad-tl-dot"></div>
+                  <div class="ad-tl-content">
+                    <div class="ad-tl-label">Sedang Direview</div>
+                    <div class="ad-tl-date" v-if="app.reviewed_at">{{ formatDate(app.reviewed_at) }}</div>
+                    <div class="ad-tl-date" v-else>Menunggu</div>
+                  </div>
                 </div>
-              </div>
+                <div class="ad-tl-item" :class="{ active: isFinal, done: isFinal, approved: app.status === 'APPROVED', rejected: app.status === 'REJECTED' }">
+                  <div class="ad-tl-dot"></div>
+                  <div class="ad-tl-content">
+                    <div class="ad-tl-label">{{ app.status === 'REJECTED' ? 'Ditolak' : app.status === 'APPROVED' ? 'Disetujui' : 'Keputusan' }}</div>
+                    <div class="ad-tl-date" v-if="app.reviewed_at && isFinal">{{ formatDate(app.reviewed_at) }}</div>
+                    <div class="ad-tl-date" v-else>Menunggu</div>
+                  </div>
+                </div>
+              </template>
             </div>
           </div>
 
@@ -355,6 +371,9 @@ onMounted(async () => {
 .ad-tl-item.active .ad-tl-dot::after{content:'';position:absolute;inset:4px;border-radius:50%;background:#fff}
 .ad-tl-item.approved .ad-tl-dot{border-color:#22c55e;background:#22c55e;box-shadow:0 0 0 4px rgba(34,197,94,.15)}
 .ad-tl-item.rejected .ad-tl-dot{border-color:#ef4444;background:#ef4444;box-shadow:0 0 0 4px rgba(239,68,68,.15)}
+.ad-tl-item.cancelled .ad-tl-dot{border-color:#94a3b8;background:#94a3b8;box-shadow:0 0 0 4px rgba(148,163,184,.15)}
+.ad-tl-item.cancelled .ad-tl-label{color:#64748b}
+.ad-tl-item.cancelled.done:not(:last-child)::after{background:#94a3b8}
 .ad-tl-content{flex:1;padding-top:1px}
 .ad-tl-label{font-size:.85rem;font-weight:600;color:#0f172a}
 .ad-tl-item:not(.active) .ad-tl-label{color:#94a3b8}
