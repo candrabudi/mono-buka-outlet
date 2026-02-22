@@ -14,7 +14,8 @@
         </header>
 
         <div class="login-form-wrapper">
-          <div class="login-form-content animate-fade-in">
+          <!-- Step 1: Email + Password -->
+          <div v-if="step === 'credentials'" class="login-form-content animate-fade-in" key="step1">
             <header class="form-header">
               <h2>Masuk ke Portal Mitra</h2>
               <p>Pantau kemitraan dan pembayaran Anda</p>
@@ -55,14 +56,60 @@
             <div class="register-link">
               Belum punya akun? <router-link to="/register">Daftar di sini</router-link>
             </div>
-
-            <nav class="login-footer-links">
-              <a href="#">Terms & Condition</a>
-              <a href="#">Privacy Policy</a>
-              <a href="#">Help</a>
-            </nav>
-            <p class="login-copyright">© 2026 BukaOutlet. All Rights Reserved.</p>
           </div>
+
+          <!-- Step 2: OTP Verification -->
+          <div v-else-if="step === 'otp'" class="login-form-content animate-fade-in" key="step2">
+            <header class="form-header">
+              <div class="otp-icon-circle">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fd9644" stroke-width="2">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                  <path d="M7 11V7a5 5 0 0110 0v4"/>
+                </svg>
+              </div>
+              <h2>Verifikasi OTP</h2>
+              <p>Kode verifikasi telah dikirim ke <strong>{{ maskedEmail }}</strong></p>
+            </header>
+
+            <form @submit.prevent="handleVerifyOTP">
+              <div class="otp-inputs">
+                <input
+                  v-for="(_, i) in 6" :key="i"
+                  :ref="el => otpRefs[i] = el"
+                  v-model="otpDigits[i]"
+                  type="text" inputmode="numeric" maxlength="1"
+                  class="otp-input"
+                  @input="onOtpInput(i)"
+                  @keydown="onOtpKeydown($event, i)"
+                  @paste="onOtpPaste"
+                />
+              </div>
+
+              <div class="otp-timer" v-if="resendCooldown > 0">
+                Kirim ulang dalam <strong>{{ resendCooldown }}s</strong>
+              </div>
+              <button v-else type="button" class="btn-resend" @click="handleResendOTP" :disabled="resendLoading">
+                {{ resendLoading ? 'Mengirim...' : 'Kirim ulang kode OTP' }}
+              </button>
+
+              <button type="submit" class="btn-login" :disabled="otpLoading || otpCode.length < 6">
+                <span v-if="otpLoading" class="spinner"></span>
+                {{ otpLoading ? 'Memverifikasi...' : 'Verifikasi' }}
+              </button>
+            </form>
+
+            <button class="btn-back" @click="step = 'credentials'">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+              Kembali ke login
+            </button>
+          </div>
+
+          <nav class="login-footer-links">
+            <a href="#">Terms & Condition</a>
+            <a href="#">Privacy Policy</a>
+            <a href="#">Help</a>
+          </nav>
+          <p class="login-copyright">© 2026 BukaOutlet. All Rights Reserved.</p>
         </div>
       </div>
 
@@ -86,7 +133,7 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, reactive, computed, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { useToastStore } from '../stores/toast'
@@ -96,26 +143,117 @@ const auth = useAuthStore()
 const toast = useToastStore()
 const router = useRouter()
 const route = useRoute()
+
+const step = ref('credentials')
 const loading = ref(false)
+const otpLoading = ref(false)
+const resendLoading = ref(false)
 const showPw = ref(false)
 const form = reactive({ email: '', password: '' })
+
+// OTP state
+const otpDigits = reactive(['', '', '', '', '', ''])
+const otpRefs = reactive([])
+const otpEmail = ref('')
+const resendCooldown = ref(0)
+let cooldownTimer = null
+
+const otpCode = computed(() => otpDigits.join(''))
+const maskedEmail = computed(() => {
+  const e = otpEmail.value
+  const at = e.indexOf('@')
+  if (at <= 2) return '***' + e.substring(at)
+  return e.substring(0, 2) + '***' + e.substring(at)
+})
+
+function startCooldown(seconds = 60) {
+  resendCooldown.value = seconds
+  clearInterval(cooldownTimer)
+  cooldownTimer = setInterval(() => {
+    resendCooldown.value--
+    if (resendCooldown.value <= 0) clearInterval(cooldownTimer)
+  }, 1000)
+}
+
+function onOtpInput(i) {
+  const val = otpDigits[i]
+  if (val && i < 5) otpRefs[i + 1]?.focus()
+}
+function onOtpKeydown(e, i) {
+  if (e.key === 'Backspace' && !otpDigits[i] && i > 0) {
+    otpRefs[i - 1]?.focus()
+  }
+}
+function onOtpPaste(e) {
+  const text = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g, '').slice(0, 6)
+  for (let i = 0; i < 6; i++) otpDigits[i] = text[i] || ''
+  if (text.length >= 6) otpRefs[5]?.focus()
+  e.preventDefault()
+}
 
 async function handleLogin() {
   loading.value = true
   try {
     const { data } = await authApi.login(form)
-    const d = data.data
-    // Direct login — no OTP for mitra
-    auth.setAuth(d.token, d.user)
-    toast.success('Login berhasil!')
-    router.push(route.query.redirect || '/')
+    otpEmail.value = data.data?.email || form.email
+    step.value = 'otp'
+    startCooldown(60)
+    toast.success(data.message || 'Kode OTP telah dikirim ke email Anda')
+    // Reset OTP digits
+    for (let i = 0; i < 6; i++) otpDigits[i] = ''
+    setTimeout(() => otpRefs[0]?.focus(), 200)
   } catch (e) {
-    const msg = e.response?.data?.error || (e.code === 'ERR_NETWORK' ? 'Server tidak dapat dihubungi' : 'Login gagal')
-    toast.error(msg)
+    const resp = e.response
+    if (resp?.status === 429) {
+      const retryMs = resp.data?.retry_after_ms || 120000
+      toast.error(`Terlalu banyak percobaan. Coba lagi dalam ${Math.ceil(retryMs / 1000)} detik`)
+    } else {
+      toast.error(resp?.data?.error || (e.code === 'ERR_NETWORK' ? 'Server tidak dapat dihubungi' : 'Login gagal'))
+    }
   } finally {
     loading.value = false
   }
 }
+
+async function handleVerifyOTP() {
+  if (otpCode.value.length < 6) return
+  otpLoading.value = true
+  try {
+    const { data } = await authApi.verifyOtp({ email: otpEmail.value, code: otpCode.value })
+    auth.setAuth(data.data.token, data.data.user)
+    toast.success('Login berhasil!')
+    router.push(route.query.redirect || '/')
+  } catch (e) {
+    const resp = e.response
+    if (resp?.status === 429) {
+      const retryMs = resp.data?.retry_after_ms || 120000
+      toast.error(`Terlalu banyak percobaan. Coba lagi dalam ${Math.ceil(retryMs / 1000)} detik`)
+    } else {
+      toast.error(resp?.data?.error || 'Kode OTP tidak valid')
+    }
+    for (let i = 0; i < 6; i++) otpDigits[i] = ''
+    otpRefs[0]?.focus()
+  } finally {
+    otpLoading.value = false
+  }
+}
+
+async function handleResendOTP() {
+  resendLoading.value = true
+  try {
+    const { data } = await authApi.resendOtp({ email: otpEmail.value })
+    toast.success(data.message || 'Kode OTP baru telah dikirim')
+    startCooldown(60)
+    for (let i = 0; i < 6; i++) otpDigits[i] = ''
+    otpRefs[0]?.focus()
+  } catch (e) {
+    toast.error(e.response?.data?.error || 'Gagal mengirim ulang OTP')
+  } finally {
+    resendLoading.value = false
+  }
+}
+
+onUnmounted(() => clearInterval(cooldownTimer))
 </script>
 
 <style scoped>
@@ -129,7 +267,8 @@ async function handleLogin() {
 .login-form-wrapper { max-width: 450px; margin: auto; padding: 60px 0 40px; width: 100%; }
 .form-header { text-align: center; margin-bottom: 32px; }
 .form-header h2 { font-family: 'Poppins', sans-serif; font-size: 28px; font-weight: 600; color: #1a202c; margin: 0 0 8px; }
-.form-header p { font-size: 15px; font-weight: 500; color: #718096; margin: 0; }
+.form-header p { font-size: 15px; font-weight: 500; color: #718096; margin: 0; line-height: 1.5; }
+.form-header strong { color: #fd9644; }
 .input-group { margin-bottom: 20px; }
 .input-group label { display: block; font-size: 14px; font-weight: 600; color: #1a202c; margin-bottom: 8px; }
 .input-wrapper { position: relative; }
@@ -146,6 +285,20 @@ async function handleLogin() {
 .register-link { text-align: center; margin-top: 24px; font-size: 14px; color: #718096; }
 .register-link a { color: #fd9644; font-weight: 700; text-decoration: none; }
 .register-link a:hover { text-decoration: underline; }
+
+/* OTP Styles */
+.otp-icon-circle { width: 64px; height: 64px; border-radius: 50%; background: #FFF6EE; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; }
+.otp-inputs { display: flex; gap: 10px; justify-content: center; margin-bottom: 20px; }
+.otp-input { width: 52px; height: 60px; border: 2px solid #e2e8f0; border-radius: 14px; text-align: center; font-size: 24px; font-weight: 700; color: #1a202c; font-family: 'Poppins', sans-serif; transition: all .2s; background: #fafafa; box-sizing: border-box; }
+.otp-input:focus { outline: none; border-color: #fd9644; box-shadow: 0 0 0 3px rgba(253,150,68,.15); background: #fff; }
+.otp-timer { text-align: center; font-size: 14px; color: #718096; margin-bottom: 20px; }
+.otp-timer strong { color: #fd9644; }
+.btn-resend { display: block; width: 100%; background: none; border: none; color: #fd9644; font-weight: 600; font-size: 14px; cursor: pointer; margin-bottom: 20px; padding: 8px; font-family: 'Urbanist', sans-serif; transition: color .15s; }
+.btn-resend:hover:not(:disabled) { color: #e8832e; text-decoration: underline; }
+.btn-resend:disabled { opacity: .5; cursor: not-allowed; }
+.btn-back { display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; background: none; border: none; color: #718096; font-size: 14px; font-weight: 600; cursor: pointer; margin-top: 16px; padding: 8px; font-family: 'Urbanist', sans-serif; transition: color .15s; }
+.btn-back:hover { color: #1a202c; }
+
 .login-footer-links { display: flex; justify-content: center; flex-wrap: wrap; gap: 24px; padding-top: 48px; }
 .login-footer-links a { font-size: 13px; color: #718096; text-decoration: none; }
 .login-footer-links a:hover { color: #1a202c; }
@@ -166,5 +319,5 @@ async function handleLogin() {
 .animate-fade-in { animation: fadeSlideUp .4s ease-out; }
 @keyframes fadeSlideUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
 @media (max-width: 1024px) { .login-right{display:none} .login-left{max-width:100%;padding:32px 20px} }
-@media (max-width: 480px) { .form-header h2{font-size:22px} .login-form-wrapper{padding:40px 0 24px} }
+@media (max-width: 480px) { .form-header h2{font-size:22px} .login-form-wrapper{padding:40px 0 24px} .otp-input{width:44px;height:52px;font-size:20px} }
 </style>

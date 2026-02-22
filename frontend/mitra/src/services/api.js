@@ -32,6 +32,8 @@ export default api
 // Auth
 export const authApi = {
   login: (data) => api.post('/auth/login', data),
+  verifyOtp: (data) => api.post('/auth/verify-otp', data),
+  resendOtp: (data) => api.post('/auth/resend-otp', data),
   register: (data) => api.post('/auth/register', data),
   profile: () => api.get('/profile'),
 }

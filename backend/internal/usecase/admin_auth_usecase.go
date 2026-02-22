@@ -81,21 +81,22 @@ func (uc *AdminAuthUseCase) Login(ctx context.Context, req AdminLoginRequest) (*
 		return nil, fmt.Errorf("akun tidak aktif")
 	}
 
-	// Check admin role
-	if !entity.IsAdminRole(user.Role) {
-		return nil, fmt.Errorf("akun tidak memiliki akses admin")
-	}
-
 	// Verify password
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password)); err != nil {
 		return nil, fmt.Errorf("email atau password salah")
+	}
+
+	// Determine OTP purpose based on role
+	purpose := entity.OTPPurposeMitraLogin
+	if entity.IsAdminRole(user.Role) {
+		purpose = entity.OTPPurposeAdminLogin
 	}
 
 	// Generate OTP
 	code := generateOTPCode()
 
 	// Invalidate previous OTPs
-	_ = uc.otpRepo.InvalidateAll(ctx, user.Email, entity.OTPPurposeAdminLogin)
+	_ = uc.otpRepo.InvalidateAll(ctx, user.Email, purpose)
 
 	// Create OTP record
 	otp := &entity.OTPCode{
@@ -103,7 +104,7 @@ func (uc *AdminAuthUseCase) Login(ctx context.Context, req AdminLoginRequest) (*
 		UserID:    user.ID,
 		Email:     user.Email,
 		Code:      code,
-		Purpose:   entity.OTPPurposeAdminLogin,
+		Purpose:   purpose,
 		ExpiresAt: time.Now().Add(time.Duration(entity.OTPExpiryMinutes) * time.Minute),
 		CreatedAt: time.Now(),
 	}
@@ -112,7 +113,7 @@ func (uc *AdminAuthUseCase) Login(ctx context.Context, req AdminLoginRequest) (*
 	}
 
 	// Send OTP via email
-	if err := uc.emailService.SendOTP(user.Email, code, entity.OTPPurposeAdminLogin); err != nil {
+	if err := uc.emailService.SendOTP(user.Email, code, purpose); err != nil {
 		return nil, fmt.Errorf("gagal mengirim OTP ke email: %w", err)
 	}
 
@@ -126,10 +127,13 @@ func (uc *AdminAuthUseCase) Login(ctx context.Context, req AdminLoginRequest) (*
 // ── Step 2: Verify OTP → get JWT ──
 
 func (uc *AdminAuthUseCase) VerifyOTP(ctx context.Context, req VerifyOTPRequest) (*AdminAuthResponse, error) {
-	// Find OTP
+	// Try both admin and mitra OTP purposes
 	otp, err := uc.otpRepo.FindByCode(ctx, req.Email, req.Code, entity.OTPPurposeAdminLogin)
 	if err != nil {
-		return nil, fmt.Errorf("kode OTP tidak valid")
+		otp, err = uc.otpRepo.FindByCode(ctx, req.Email, req.Code, entity.OTPPurposeMitraLogin)
+		if err != nil {
+			return nil, fmt.Errorf("kode OTP tidak valid")
+		}
 	}
 
 	// Check expiry
@@ -169,12 +173,15 @@ func (uc *AdminAuthUseCase) ResendOTP(ctx context.Context, req ResendOTPRequest)
 	if err != nil {
 		return nil, fmt.Errorf("email tidak terdaftar")
 	}
-	if !entity.IsAdminRole(user.Role) {
-		return nil, fmt.Errorf("akun tidak memiliki akses admin")
+
+	// Determine OTP purpose based on role
+	purpose := entity.OTPPurposeMitraLogin
+	if entity.IsAdminRole(user.Role) {
+		purpose = entity.OTPPurposeAdminLogin
 	}
 
 	// Invalidate previous
-	_ = uc.otpRepo.InvalidateAll(ctx, user.Email, entity.OTPPurposeAdminLogin)
+	_ = uc.otpRepo.InvalidateAll(ctx, user.Email, purpose)
 
 	// Generate new OTP
 	code := generateOTPCode()
@@ -183,14 +190,14 @@ func (uc *AdminAuthUseCase) ResendOTP(ctx context.Context, req ResendOTPRequest)
 		UserID:    user.ID,
 		Email:     user.Email,
 		Code:      code,
-		Purpose:   entity.OTPPurposeAdminLogin,
+		Purpose:   purpose,
 		ExpiresAt: time.Now().Add(time.Duration(entity.OTPExpiryMinutes) * time.Minute),
 		CreatedAt: time.Now(),
 	}
 	if err := uc.otpRepo.Create(ctx, otp); err != nil {
 		return nil, fmt.Errorf("gagal membuat OTP: %w", err)
 	}
-	if err := uc.emailService.SendOTP(user.Email, code, entity.OTPPurposeAdminLogin); err != nil {
+	if err := uc.emailService.SendOTP(user.Email, code, purpose); err != nil {
 		return nil, fmt.Errorf("gagal mengirim OTP: %w", err)
 	}
 

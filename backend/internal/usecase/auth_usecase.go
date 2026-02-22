@@ -3,7 +3,10 @@ package usecase
 import (
 	"context"
 	"fmt"
+	"regexp"
+	"strings"
 	"time"
+	"unicode"
 
 	"github.com/franchise-system/backend/internal/entity"
 	"github.com/franchise-system/backend/internal/repository"
@@ -28,11 +31,68 @@ type LoginRequest struct {
 }
 
 type RegisterRequest struct {
-	Name     string `json:"name" binding:"required"`
-	Email    string `json:"email" binding:"required,email"`
-	Password string `json:"password" binding:"required,min=6"`
-	Phone    string `json:"phone"`
-	Role     string `json:"role"`
+	Name            string `json:"name" binding:"required"`
+	Email           string `json:"email" binding:"required,email"`
+	Password        string `json:"password" binding:"required,min=8"`
+	ConfirmPassword string `json:"confirm_password" binding:"required"`
+	Phone           string `json:"phone"`
+	Role            string `json:"role"`
+}
+
+// validateRegister performs strong validation on registration fields
+func validateRegister(req RegisterRequest) []string {
+	var errs []string
+
+	// Name validation
+	name := strings.TrimSpace(req.Name)
+	if len(name) < 3 {
+		errs = append(errs, "Nama lengkap minimal 3 karakter")
+	}
+	if len(name) > 100 {
+		errs = append(errs, "Nama lengkap maksimal 100 karakter")
+	}
+
+	// Password strength
+	if len(req.Password) < 8 {
+		errs = append(errs, "Password minimal 8 karakter")
+	}
+	var hasUpper, hasLower, hasDigit bool
+	for _, r := range req.Password {
+		switch {
+		case unicode.IsUpper(r):
+			hasUpper = true
+		case unicode.IsLower(r):
+			hasLower = true
+		case unicode.IsDigit(r):
+			hasDigit = true
+		}
+	}
+	if !hasUpper {
+		errs = append(errs, "Password harus mengandung huruf besar")
+	}
+	if !hasLower {
+		errs = append(errs, "Password harus mengandung huruf kecil")
+	}
+	if !hasDigit {
+		errs = append(errs, "Password harus mengandung angka")
+	}
+
+	// Confirm password
+	if req.Password != req.ConfirmPassword {
+		errs = append(errs, "Konfirmasi password tidak cocok")
+	}
+
+	// Phone validation (optional but if provided, must be valid)
+	if req.Phone != "" {
+		phone := strings.ReplaceAll(req.Phone, " ", "")
+		phone = strings.ReplaceAll(phone, "-", "")
+		phoneRegex := regexp.MustCompile(`^(\+62|62|08)[0-9]{8,13}$`)
+		if !phoneRegex.MatchString(phone) {
+			errs = append(errs, "Format nomor handphone tidak valid (gunakan format 08xx atau +62xx)")
+		}
+	}
+
+	return errs
 }
 
 type AuthResponse struct {
@@ -59,6 +119,11 @@ func (uc *AuthUseCase) Login(ctx context.Context, req LoginRequest) (*AuthRespon
 }
 
 func (uc *AuthUseCase) Register(ctx context.Context, req RegisterRequest) (*AuthResponse, error) {
+	// Strong validation
+	if validationErrs := validateRegister(req); len(validationErrs) > 0 {
+		return nil, fmt.Errorf("%s", strings.Join(validationErrs, "; "))
+	}
+
 	existing, _ := uc.userRepo.FindByEmail(ctx, req.Email)
 	if existing != nil {
 		return nil, fmt.Errorf("email already registered")
