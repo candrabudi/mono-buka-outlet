@@ -18,6 +18,7 @@ const routes = [
       { path: 'applications', name: 'Applications', component: () => import('../pages/Applications.vue') },
       { path: 'applications/:id', name: 'ApplicationDetail', component: () => import('../pages/ApplicationDetail.vue') },
       { path: 'invoices', name: 'Invoices', component: () => import('../pages/Invoices.vue') },
+      { path: 'invoices/:id', name: 'InvoiceDetail', component: () => import('../pages/InvoiceDetail.vue') },
       { path: 'agreements', name: 'Agreements', component: () => import('../pages/Agreements.vue') },
       { path: 'locations', name: 'Locations', component: () => import('../pages/Locations.vue') },
       { path: 'settings', name: 'Settings', component: () => import('../pages/Settings.vue') },

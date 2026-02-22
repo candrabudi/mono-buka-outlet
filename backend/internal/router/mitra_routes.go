@@ -49,6 +49,7 @@ func RegisterMitraRoutes(r *gin.Engine, h Handlers, jwtSecret string) {
 
 			// Invoices (own)
 			mitraProtected.GET("/invoices", h.Invoice.GetByMitra)
+			mitraProtected.GET("/invoices/:id", h.Invoice.GetByID)
 
 			// Agreements (own)
 			mitraProtected.GET("/agreements", h.Agreement.GetByMitra)

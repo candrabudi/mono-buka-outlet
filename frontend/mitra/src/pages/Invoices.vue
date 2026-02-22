@@ -20,7 +20,7 @@
           <tr><th>No. Invoice</th><th>Tipe</th><th>Jumlah</th><th>Status</th><th>Tanggal</th><th>Aksi</th></tr>
         </thead>
         <tbody>
-          <tr v-for="inv in invoices" :key="inv.id">
+          <tr v-for="inv in invoices" :key="inv.id" @click="$router.push(`/invoices/${inv.id}`)" style="cursor:pointer">
             <td><span class="inv-number">{{ inv.invoice_number }}</span></td>
             <td><span class="inv-type-badge" :class="'it-'+inv.type">{{ typeLabel(inv.type) }}</span></td>
             <td><span class="inv-amount">{{ fc(inv.amount) }}</span></td>
@@ -32,10 +32,14 @@
             </td>
             <td><span class="inv-date">{{ formatDate(inv.created_at) }}</span></td>
             <td>
-              <a v-if="inv.midtrans_redirect_url && inv.status==='PENDING'" :href="inv.midtrans_redirect_url" target="_blank" class="inv-pay-btn">
+              <a v-if="inv.midtrans_redirect_url && inv.status==='PENDING'" :href="inv.midtrans_redirect_url" target="_blank" class="inv-pay-btn" @click.stop>
                 <i class="ri-bank-card-line" style="font-size:14px"></i>
                 Bayar
               </a>
+              <router-link v-else :to="`/invoices/${inv.id}`" class="inv-view-btn" @click.stop>
+                <i class="ri-eye-line"></i>
+                Lihat
+              </router-link>
             </td>
           </tr>
         </tbody>
@@ -108,6 +112,8 @@ function statusLabel(s) { return {PAID:'Lunas',PENDING:'Menunggu',EXPIRED:'Kadal
 
 .inv-pay-btn { display: inline-flex; align-items: center; gap: 5px; font-size: .78rem; font-weight: 600; color: #fff; text-decoration: none; padding: 6px 14px; border-radius: 8px; background: linear-gradient(135deg, #6366f1, #8b5cf6); box-shadow: 0 2px 8px rgba(99,102,241,.25); transition: all .15s; }
 .inv-pay-btn:hover { box-shadow: 0 4px 14px rgba(99,102,241,.35); transform: translateY(-1px); }
+.inv-view-btn { display: inline-flex; align-items: center; gap: 4px; font-size: .78rem; font-weight: 600; color: #6366f1; text-decoration: none; padding: 6px 12px; border-radius: 8px; background: #eef2ff; transition: all .15s; }
+.inv-view-btn:hover { background: #e0e7ff; }
 
 .inv-empty { text-align: center; padding: 56px 20px; }
 .inv-empty-circle { width: 72px; height: 72px; border-radius: 50%; background: linear-gradient(135deg, #f1f5f9, #e2e8f0); display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; }
