@@ -196,15 +196,6 @@
         </div>
       </div>
 
-      <!-- Quick Actions -->
-      <div class="db-actions">
-        <router-link to="/outlets/create" class="db-act"><i class="ri-add-circle-fill"></i> Tambah Outlet</router-link>
-        <router-link to="/applications" class="db-act"><i class="ri-file-search-fill"></i> Review Pengajuan</router-link>
-        <router-link to="/partnerships" class="db-act"><i class="ri-handshake-fill"></i> Partnership</router-link>
-        <router-link to="/mitra" class="db-act"><i class="ri-group-fill"></i> Kelola Mitra</router-link>
-        <router-link to="/meetings" class="db-act"><i class="ri-calendar-event-fill"></i> Meetings</router-link>
-        <router-link to="/locations" class="db-act"><i class="ri-map-pin-fill"></i> Lokasi</router-link>
-      </div>
     </template>
   </div>
 </template>
