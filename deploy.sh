@@ -72,6 +72,10 @@ echo ""
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 if [ ! -d "$REPO_DIR/.git" ]; then
   log "📥 Cloning repository..."
+  # Hapus dir jika ada tapi bukan git repo (clone gagal sebelumnya)
+  if [ -d "$REPO_DIR" ]; then
+    rm -rf "$REPO_DIR"
+  fi
   git clone -b "$BRANCH" "$GITHUB_REPO" "$REPO_DIR" || fail "Git clone gagal"
   ok "Repository cloned → $REPO_DIR"
 else
