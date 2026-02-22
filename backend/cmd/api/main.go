@@ -107,7 +107,7 @@ func main() {
 	paymentUC := usecase.NewPaymentUseCase(paymentRepo, partnershipRepo, activityLogRepo)
 	agreementUC := usecase.NewAgreementUseCase(agreementRepo, partnershipRepo, activityLogRepo)
 	revenueUC := usecase.NewRevenueUseCase(revenueRepo, partnershipRepo)
-	dashboardUC := usecase.NewDashboardUseCase(dashboardRepo)
+	dashboardUC := usecase.NewDashboardUseCase(dashboardRepo, db)
 	meetingUC := usecase.NewMeetingUseCase(meetingRepo)
 
 	handlers := router.Handlers{
