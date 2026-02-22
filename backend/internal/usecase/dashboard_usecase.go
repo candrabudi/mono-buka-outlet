@@ -25,14 +25,19 @@ type DashboardStats struct {
 	LeadsByStatus   map[string]int           `json:"leads_by_status"`
 	RevenueChart    []map[string]interface{} `json:"revenue_chart"`
 
-	TotalOutlets         int            `json:"total_outlets"`
-	TotalPartnerships    int            `json:"total_partnerships"`
-	PartnershipsByStatus map[string]int `json:"partnerships_by_status"`
-	PendingApplications  int            `json:"pending_applications"`
-	TotalApplications    int            `json:"total_applications"`
-	ApplicationsByStatus map[string]int `json:"applications_by_status"`
-	PendingInvoices      int            `json:"pending_invoices"`
-	PaidInvoices         int            `json:"paid_invoices"`
+	TotalOutlets          int            `json:"total_outlets"`
+	TotalPartnerships     int            `json:"total_partnerships"`
+	PartnershipsByStatus  map[string]int `json:"partnerships_by_status"`
+	PendingApplications   int            `json:"pending_applications"`
+	TotalApplications     int            `json:"total_applications"`
+	ApplicationsByStatus  map[string]int `json:"applications_by_status"`
+	PendingInvoices       int            `json:"pending_invoices"`
+	PaidInvoices          int            `json:"paid_invoices"`
+	TotalIncomeAmount     float64        `json:"total_income_amount"`
+	PendingInvoiceAmount  float64        `json:"pending_invoice_amount"`
+	TotalPaymentsVerified float64        `json:"total_payments_verified"`
+	TotalMitra            int            `json:"total_mitra"`
+	TotalUsers            int            `json:"total_users"`
 }
 
 func (uc *DashboardUseCase) GetStats(ctx context.Context, brandID *uuid.UUID) (*DashboardStats, error) {
@@ -70,6 +75,11 @@ func (uc *DashboardUseCase) GetStats(ctx context.Context, brandID *uuid.UUID) (*
 	uc.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM partnership_applications WHERE status = 'PENDING'").Scan(&stats.PendingApplications)
 	uc.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM invoices WHERE status = 'PENDING'").Scan(&stats.PendingInvoices)
 	uc.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM invoices WHERE status = 'PAID'").Scan(&stats.PaidInvoices)
+	uc.db.QueryRowContext(ctx, "SELECT COALESCE(SUM(amount),0) FROM invoices WHERE status = 'PAID'").Scan(&stats.TotalIncomeAmount)
+	uc.db.QueryRowContext(ctx, "SELECT COALESCE(SUM(amount),0) FROM invoices WHERE status = 'PENDING'").Scan(&stats.PendingInvoiceAmount)
+	uc.db.QueryRowContext(ctx, "SELECT COALESCE(SUM(amount),0) FROM payments WHERE status = 'VERIFIED'").Scan(&stats.TotalPaymentsVerified)
+	uc.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM users WHERE role = 'mitra' AND is_active = true").Scan(&stats.TotalMitra)
+	uc.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM users WHERE is_active = true").Scan(&stats.TotalUsers)
 
 	// Partnerships by status
 	stats.PartnershipsByStatus = map[string]int{}
