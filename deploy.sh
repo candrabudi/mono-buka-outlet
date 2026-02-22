@@ -88,18 +88,32 @@ fi
 cd "$REPO_DIR"
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-# 2. DATABASE — Auto create if not exists
+# 2. DATABASE — Auto create user, db, grant permissions
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-log "�️  Checking database..."
-DB_EXISTS=$(PGPASSWORD="$DB_PASS" psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -tAc "SELECT 1 FROM pg_database WHERE datname='$DB_NAME'" 2>/dev/null || echo "")
+log "🗄️  Setting up database..."
 
+# Create user if not exists (via postgres superuser)
+USER_EXISTS=$(sudo -u postgres psql -tAc "SELECT 1 FROM pg_roles WHERE rolname='$DB_USER'" 2>/dev/null || echo "")
+if [ "$USER_EXISTS" != "1" ]; then
+  sudo -u postgres psql -c "CREATE USER $DB_USER WITH PASSWORD '$DB_PASS';" || fail "Gagal membuat DB user"
+  ok "User '$DB_USER' created"
+else
+  ok "User '$DB_USER' already exists — skipped"
+fi
+
+# Create database if not exists
+DB_EXISTS=$(sudo -u postgres psql -tAc "SELECT 1 FROM pg_database WHERE datname='$DB_NAME'" 2>/dev/null || echo "")
 if [ "$DB_EXISTS" != "1" ]; then
-  log "  Creating database '$DB_NAME'..."
-  PGPASSWORD="$DB_PASS" createdb -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" "$DB_NAME" || fail "Gagal membuat database"
+  sudo -u postgres psql -c "CREATE DATABASE $DB_NAME OWNER $DB_USER;" || fail "Gagal membuat database"
   ok "Database '$DB_NAME' created"
 else
   ok "Database '$DB_NAME' already exists — skipped"
 fi
+
+# Grant all privileges
+sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE $DB_NAME TO $DB_USER;" 2>/dev/null || true
+sudo -u postgres psql -d "$DB_NAME" -c "GRANT ALL ON SCHEMA public TO $DB_USER;" 2>/dev/null || true
+ok "Permissions granted to '$DB_USER'"
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 # 3. BACKEND .env — Auto generate
