@@ -43,7 +43,7 @@ func (s *Seeder) seedUsers() error {
 		Phone string
 		Role  string
 	}{
-		{"Master Admin", "master@bukaoutlet.com", "081234567890", "master"},
+		{"Master Admin", "bagus.candrabudi@gmail.com", "081234567890", "master"},
 		{"Admin Outlet", "admin@bukaoutlet.com", "081234567891", "admin"},
 		{"Finance Officer", "finance@bukaoutlet.com", "081234567892", "finance"},
 		{"Mitra Demo", "mitra@bukaoutlet.com", "081234567895", "mitra"},
