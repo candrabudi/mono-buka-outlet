@@ -10,6 +10,8 @@ set -e
 # │ CONFIG — Sesuaikan bagian ini
 # └──────────────────────────────────────────────────────────────
 REPO_DIR="/home/outlet_ready"
+GITHUB_REPO="https://github.com/candrabudi/mono-buka-outlet.git"
+BRANCH="master"
 
 # Domain paths
 PANEL_DEPLOY="/home/apbo.dinanfarm.com"
@@ -66,12 +68,20 @@ echo -e "${BOLD}${CYAN}═══════════════════
 echo ""
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-# 1. GIT PULL
+# 1. GIT CLONE / PULL
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-log "📥 Pulling latest code..."
+if [ ! -d "$REPO_DIR/.git" ]; then
+  log "📥 Cloning repository..."
+  git clone -b "$BRANCH" "$GITHUB_REPO" "$REPO_DIR" || fail "Git clone gagal"
+  ok "Repository cloned → $REPO_DIR"
+else
+  log "📥 Pulling latest from $BRANCH..."
+  cd "$REPO_DIR"
+  git fetch origin "$BRANCH"
+  git reset --hard "origin/$BRANCH"
+  ok "Code updated to latest $BRANCH"
+fi
 cd "$REPO_DIR"
-git pull origin master || fail "Git pull gagal"
-ok "Code updated"
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 # 2. DATABASE — Auto create if not exists
