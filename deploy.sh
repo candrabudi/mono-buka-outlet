@@ -15,7 +15,7 @@ BRANCH="master"
 
 # Domain paths
 PANEL_DEPLOY="/home/apbo.dinanfarm.com/public_html"
-API_DEPLOY="/home/apibo.dinanfarm.com"
+API_DEPLOY="/home/apibo.dinanfarm.com/public_html"
 MITRA_DEPLOY="/home/merbo.dinanfarm.com/public_html"
 
 # Domain URLs (untuk .env frontend)
