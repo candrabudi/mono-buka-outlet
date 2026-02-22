@@ -29,6 +29,9 @@ const routes = [
       { path: 'partnerships', name: 'Partnerships', component: () => import('../pages/partnerships/PartnershipList.vue'), meta: { roles: ['master', 'admin', 'finance'] } },
       { path: 'partnerships/:id', name: 'PartnershipDetail', component: () => import('../pages/partnerships/PartnershipDetail.vue'), meta: { roles: ['master', 'admin', 'finance'] } },
 
+      // Applications — master, admin
+      { path: 'applications', name: 'Applications', component: () => import('../pages/applications/ApplicationList.vue'), meta: { roles: ['master', 'admin'] } },
+
       // Payments — master, finance
       { path: 'payments', name: 'Payments', component: () => import('../pages/payments/PaymentList.vue'), meta: { roles: ['master', 'finance'] } },
 

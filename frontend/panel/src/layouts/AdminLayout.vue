@@ -109,6 +109,7 @@ const pageTitles = {
   Settings: 'Pengaturan Sistem',
   Locations: 'Pengajuan Lokasi',
   LocationDetail: 'Detail Lokasi',
+  Applications: 'Pengajuan Partnership',
 }
 const pageSubtitles = {
   Dashboard: "Let's check your update today",
@@ -126,6 +127,7 @@ const pageSubtitles = {
   Settings: 'Konfigurasi aplikasi & integrasi pembayaran',
   Locations: 'Kelola pengajuan & survei lokasi mitra',
   LocationDetail: 'Detail informasi, scoring, survei & approval',
+  Applications: 'Review dan kelola pengajuan kemitraan dari mitra',
 }
 
 const pageTitle = computed(() => pageTitles[route.name] || '')

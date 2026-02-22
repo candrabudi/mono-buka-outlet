@@ -66,6 +66,17 @@
                 <span class="sidebar-link-text">Kategori</span>
               </router-link>
             </li>
+            <li>
+              <router-link to="/applications" class="sidebar-link" :class="{ active: $route.path.startsWith('/applications') }">
+                <span class="sidebar-link-icon">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M9 12h6M9 16h6M17 21H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" stroke="currentColor" stroke-width="2" fill="none" class="path-1"/>
+                    <path d="M13 3v5a1 1 0 001 1h5" stroke="var(--primary)" stroke-width="2" fill="none" class="path-2"/>
+                  </svg>
+                </span>
+                <span class="sidebar-link-text">Pengajuan</span>
+              </router-link>
+            </li>
           </ul>
         </div>
 

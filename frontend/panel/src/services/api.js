@@ -180,3 +180,9 @@ export const locationApi = {
   deleteFile: (id, fileId) => api.delete(`/location-submissions/${id}/files/${fileId}`),
   approve: (id, data) => api.post(`/location-submissions/${id}/approve`, data),
 }
+
+export const applicationApi = {
+  list: (params) => api.get('/partnership-applications', { params }),
+  get: (id) => api.get(`/partnership-applications/${id}`),
+  review: (id, data) => api.patch(`/partnership-applications/${id}/review`, data),
+}
