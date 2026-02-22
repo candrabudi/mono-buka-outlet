@@ -15,7 +15,7 @@
       <div class="set-card">
         <div class="set-card-header">
           <div class="set-card-icon" style="background:#eff6ff;color:#3b82f6">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            <i class="ri-user-line"></i>
           </div>
           <div>
             <h3 class="set-card-title">Informasi Profil</h3>
@@ -27,7 +27,7 @@
           <div class="set-field">
             <label for="prof-name">Nama Lengkap</label>
             <div class="set-input-wrap">
-              <svg class="set-input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              <i class="ri-user-line"></i>
               <input id="prof-name" v-model="profile.name" type="text" placeholder="Nama lengkap" />
             </div>
             <span v-if="profileErrors.name" class="set-error">{{ profileErrors.name }}</span>
@@ -36,7 +36,7 @@
           <div class="set-field">
             <label for="prof-email">Email</label>
             <div class="set-input-wrap">
-              <svg class="set-input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+              <i class="ri-mail-line"></i>
               <input id="prof-email" v-model="profile.email" type="email" placeholder="email@example.com" />
             </div>
             <span v-if="profileErrors.email" class="set-error">{{ profileErrors.email }}</span>
@@ -45,7 +45,7 @@
           <div class="set-field">
             <label for="prof-phone">No. Handphone</label>
             <div class="set-input-wrap">
-              <svg class="set-input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72"/></svg>
+              <i class="ri-phone-line"></i>
               <input id="prof-phone" v-model="profile.phone" type="text" placeholder="08xxxxxxxxxx" />
             </div>
             <span v-if="profileErrors.phone" class="set-error">{{ profileErrors.phone }}</span>
@@ -65,7 +65,7 @@
       <div class="set-card">
         <div class="set-card-header">
           <div class="set-card-icon" style="background:#fef3c7;color:#d97706">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+            <i class="ri-lock-line"></i>
           </div>
           <div>
             <h3 class="set-card-title">Ubah Password</h3>
@@ -77,13 +77,10 @@
           <div class="set-field">
             <label for="pw-old">Password Saat Ini</label>
             <div class="set-input-wrap">
-              <svg class="set-input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+              <i class="ri-lock-line"></i>
               <input id="pw-old" v-model="pw.old_password" :type="showOld ? 'text' : 'password'" placeholder="Password saat ini" required />
               <button type="button" class="set-toggle-pw" @click="showOld = !showOld" tabindex="-1">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.5">
-                  <template v-if="!showOld"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></template>
-                  <template v-else><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></template>
-                </svg>
+                <i :class="showOld ? 'ri-eye-line' : 'ri-eye-off-line'" style="color:#94a3b8"></i>
               </button>
             </div>
           </div>
@@ -91,13 +88,10 @@
           <div class="set-field">
             <label for="pw-new">Password Baru</label>
             <div class="set-input-wrap">
-              <svg class="set-input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+              <i class="ri-lock-line"></i>
               <input id="pw-new" v-model="pw.new_password" :type="showNew ? 'text' : 'password'" placeholder="Min. 8 karakter" required @input="pwTouched = true" />
               <button type="button" class="set-toggle-pw" @click="showNew = !showNew" tabindex="-1">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.5">
-                  <template v-if="!showNew"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></template>
-                  <template v-else><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></template>
-                </svg>
+                <i :class="showNew ? 'ri-eye-line' : 'ri-eye-off-line'" style="color:#94a3b8"></i>
               </button>
             </div>
             <!-- Strength indicator -->
@@ -116,13 +110,10 @@
           <div class="set-field">
             <label for="pw-confirm">Konfirmasi Password Baru</label>
             <div class="set-input-wrap">
-              <svg class="set-input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+              <i class="ri-lock-line"></i>
               <input id="pw-confirm" v-model="pw.confirm_new_password" :type="showConfirm ? 'text' : 'password'" placeholder="Ulangi password baru" required />
               <button type="button" class="set-toggle-pw" @click="showConfirm = !showConfirm" tabindex="-1">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.5">
-                  <template v-if="!showConfirm"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></template>
-                  <template v-else><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></template>
-                </svg>
+                <i :class="showConfirm ? 'ri-eye-line' : 'ri-eye-off-line'" style="color:#94a3b8"></i>
               </button>
             </div>
             <span v-if="pw.confirm_new_password && pw.new_password !== pw.confirm_new_password" class="set-error">Password tidak cocok</span>

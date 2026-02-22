@@ -3,7 +3,7 @@
     <!-- Hero -->
     <div class="af-hero">
       <button class="af-back" @click="$router.back()">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5"/><polyline points="12 19 5 12 12 5"/></svg>
+        <i class="ri-arrow-left-line"></i>
         Kembali
       </button>
       <div>
@@ -24,7 +24,7 @@
         <div class="af-summary-left">
           <div class="af-summary-logo">
             <img v-if="outlet?.logo" :src="outlet.logo" :alt="outlet?.name" />
-            <svg v-else width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.5"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+            <i v-else class="ri-home-5-line" style="font-size:24px;color:#94a3b8"></i>
           </div>
           <div>
             <div class="af-summary-outlet">{{ outlet?.name || '-' }}</div>
@@ -61,7 +61,7 @@
       <!-- Form -->
       <div class="af-form-card">
         <h3 class="af-form-title">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          <i class="ri-edit-line"></i>
           Data Pengajuan
         </h3>
 
@@ -91,7 +91,7 @@
               <div></div>
               <button type="button" class="af-btn-next" @click="step = 2" :disabled="!form.motivation.trim()">
                 Lanjutkan
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+                <i class="ri-arrow-right-s-line"></i>
               </button>
             </div>
           </div>
@@ -103,7 +103,7 @@
                 <label>No. HP yang Bisa Dihubungi <span class="af-req">*</span></label>
                 <p class="af-hint">Nomor aktif untuk komunikasi terkait pengajuan</p>
                 <div class="af-input-prefix-wrap">
-                  <span class="af-input-prefix"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72"/></svg></span>
+                  <span class="af-input-prefix"><i class="ri-phone-line"></i></span>
                   <input v-model="form.contact_phone" type="text" placeholder="08xxxxxxxxxx" class="af-input with-prefix" />
                 </div>
                 <span v-if="form.contact_phone && !isPhoneValid" class="af-field-error">Format: 08xx atau +62xx</span>
@@ -112,7 +112,7 @@
                 <label>Email yang Bisa Dihubungi <span class="af-req">*</span></label>
                 <p class="af-hint">Email aktif untuk menerima informasi pengajuan</p>
                 <div class="af-input-prefix-wrap">
-                  <span class="af-input-prefix"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg></span>
+                  <span class="af-input-prefix"><i class="ri-mail-line"></i></span>
                   <input v-model="form.contact_email" type="email" placeholder="email@contoh.com" class="af-input with-prefix" />
                 </div>
                 <span v-if="form.contact_email && !isEmailValid" class="af-field-error">Format email tidak valid</span>
@@ -134,12 +134,12 @@
             </div>
             <div class="af-actions">
               <button type="button" class="af-btn-back" @click="step = 1">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+                <i class="ri-arrow-left-s-line"></i>
                 Kembali
               </button>
               <button type="button" class="af-btn-next" @click="step = 3" :disabled="!canStep3">
                 Lanjutkan
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+                <i class="ri-arrow-right-s-line"></i>
               </button>
             </div>
           </div>
@@ -182,17 +182,17 @@
             </div>
 
             <div class="af-confirm-note">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              <i class="ri-error-warning-line"></i>
               Dengan mengirim pengajuan ini, Anda menyetujui bahwa data yang diisi adalah benar. Tim kami akan meninjau pengajuan Anda.
             </div>
 
             <div class="af-actions">
               <button type="button" class="af-btn-back" @click="step = 2">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+                <i class="ri-arrow-left-s-line"></i>
                 Kembali
               </button>
               <button type="submit" class="af-btn-submit" :disabled="submitting">
-                <svg v-if="!submitting" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                <i class="ri-send-plane-line"></i>
                 <span v-if="submitting" class="af-spin"></span>
                 {{ submitting ? 'Mengirim...' : 'Kirim Pengajuan' }}
               </button>

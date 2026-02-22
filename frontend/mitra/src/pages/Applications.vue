@@ -8,7 +8,7 @@
           <p class="app-hero-sub">Pantau status pengajuan kemitraan Anda</p>
         </div>
         <router-link to="/outlets" class="app-new-btn">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          <i class="ri-add-line"></i>
           Ajukan Baru
         </router-link>
       </div>
@@ -29,12 +29,12 @@
     <div v-else-if="apps.length === 0" class="app-empty-wrap">
       <div class="app-empty-card">
         <div class="app-empty-circle">
-          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.5"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg>
+          <i class="ri-file-list-3-line" style="font-size:36px;color:#94a3b8"></i>
         </div>
         <h3>Belum ada pengajuan</h3>
         <p>Mulai jelajahi outlet untuk mengajukan kemitraan</p>
         <router-link to="/outlets" class="app-empty-btn">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <i class="ri-search-line"></i>
           Jelajahi Outlet
         </router-link>
       </div>
@@ -46,7 +46,7 @@
         <div class="app-card-left">
           <div class="app-card-logo">
             <img v-if="a.outlet?.logo" :src="a.outlet.logo" :alt="a.outlet?.name" />
-            <svg v-else width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.5"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+            <i v-else class="ri-home-5-line" style="font-size:20px;color:#94a3b8"></i>
           </div>
           <div class="app-card-info">
             <div class="app-card-outlet">{{ a.outlet?.name || '-' }}</div>
@@ -55,11 +55,11 @@
         </div>
         <div class="app-card-center">
           <div class="app-card-detail" v-if="a.proposed_location">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            <i class="ri-map-pin-line"></i>
             {{ a.proposed_location }}
           </div>
           <div class="app-card-detail" v-if="a.investment_budget">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            <i class="ri-money-dollar-circle-line" style="font-size:12px"></i>
             {{ fc(a.investment_budget) }}
           </div>
         </div>
@@ -73,7 +73,7 @@
 
         <!-- Admin Notes -->
         <div v-if="a.admin_notes" class="app-card-notes">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          <i class="ri-chat-3-line"></i>
           <span>{{ a.admin_notes }}</span>
         </div>
       </div>

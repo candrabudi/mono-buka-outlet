@@ -12,13 +12,13 @@
         </div>
         <h4 class="loc-name">{{ loc.nama_lokasi }}</h4>
         <div class="loc-meta">
-          <span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg> {{ loc.kota || '-' }}</span>
-          <span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/></svg> {{ loc.luas_tempat || 0 }} m²</span>
+          <span><i class="ri-map-pin-line"></i> {{ loc.kota || '-' }}</span>
+          <span><i class="ri-layout-line" style="font-size:12px"></i> {{ loc.luas_tempat || 0 }} m²</span>
         </div>
       </div>
     </div>
     <div v-else class="loc-empty">
-      <div class="loc-empty-circle"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></div>
+      <div class="loc-empty-circle"><i class="ri-map-pin-line"></i></div>
       <p>Belum ada pengajuan lokasi</p>
     </div>
   </div>

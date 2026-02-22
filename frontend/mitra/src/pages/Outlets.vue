@@ -17,10 +17,10 @@
     <!-- Search Bar -->
     <div class="out-toolbar">
       <div class="out-search-wrap">
-        <svg class="out-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <i class="ri-search-line"></i>
         <input v-model="search" type="text" placeholder="Cari nama outlet atau kategori..." class="out-search-input" @input="debouncedFetch" />
         <button v-if="search" class="out-search-clear" @click="search=''; fetchOutlets()">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          <i class="ri-close-line"></i>
         </button>
       </div>
     </div>
@@ -43,7 +43,7 @@
     <div v-else-if="outlets.length === 0" class="out-empty-wrap">
       <div class="out-empty-card">
         <div class="out-empty-circle">
-          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.5"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          <i class="ri-home-5-line"></i>
         </div>
         <h3>{{ search ? 'Tidak ditemukan' : 'Belum ada outlet' }}</h3>
         <p>{{ search ? `Tidak ada outlet yang cocok dengan "${search}"` : 'Outlet yang tersedia akan ditampilkan di sini' }}</p>
@@ -58,12 +58,12 @@
         <div class="out-card-banner">
           <img v-if="o.banner" :src="o.banner" :alt="o.name" />
           <div v-else class="out-card-banner-ph">
-            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#d6d3d1" stroke-width="1"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            <i class="ri-home-5-line"></i>
           </div>
           <div class="out-card-banner-overlay"></div>
           <div class="out-card-banner-top">
             <span v-if="o.is_featured" class="out-card-feat">
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>
+              <i class="ri-star-fill" style="font-size:10px"></i>
               Featured
             </span>
           </div>
@@ -77,7 +77,7 @@
           <div class="out-card-head">
             <div class="out-card-logo">
               <img v-if="o.logo" :src="o.logo" :alt="o.name" />
-              <svg v-else width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.5"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+              <i v-else class="ri-home-5-line" style="font-size:20px;color:#94a3b8"></i>
             </div>
             <div class="out-card-title-wrap">
               <h3 class="out-card-name">{{ o.name }}</h3>
@@ -88,14 +88,14 @@
           <p class="out-card-desc">{{ o.short_description || (o.description ? o.description.substring(0, 120) + '...' : 'Belum ada deskripsi') }}</p>
 
           <div class="out-card-chips">
-            <span v-if="o.estimated_roi" class="out-chip"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/></svg> ROI {{ o.estimated_roi }}</span>
-            <span v-if="o.profit_sharing_percentage" class="out-chip"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/></svg> {{ o.profit_sharing_percentage }}%</span>
-            <span v-if="o.total_outlets" class="out-chip"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg> {{ o.total_outlets }} outlet</span>
+            <span v-if="o.estimated_roi" class="out-chip"><i class="ri-line-chart-line"></i> ROI {{ o.estimated_roi }}</span>
+            <span v-if="o.profit_sharing_percentage" class="out-chip"><i class="ri-percent-line" style="font-size:10px"></i> {{ o.profit_sharing_percentage }}%</span>
+            <span v-if="o.total_outlets" class="out-chip"><i class="ri-store-2-line" style="font-size:10px"></i> {{ o.total_outlets }} outlet</span>
           </div>
 
           <div class="out-card-footer">
             <span class="out-card-loc" v-if="o.city || o.province">
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+              <i class="ri-map-pin-line"></i>
               {{ [o.city, o.province].filter(Boolean).join(', ') }}
             </span>
             <span class="out-card-cta">Lihat Detail →</span>
@@ -107,7 +107,7 @@
     <!-- Pagination -->
     <div v-if="total > limit && !loading" class="out-pagination">
       <button :disabled="page <= 1" @click="page--; fetchOutlets()" class="out-pag-btn">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+        <i class="ri-arrow-left-s-line"></i>
         Sebelumnya
       </button>
       <div class="out-pag-pages">
@@ -115,7 +115,7 @@
       </div>
       <button :disabled="page >= Math.ceil(total / limit)" @click="page++; fetchOutlets()" class="out-pag-btn">
         Selanjutnya
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+        <i class="ri-arrow-right-s-line"></i>
       </button>
     </div>
   </div>

@@ -10,7 +10,7 @@
       <!-- Hero -->
       <div class="od-hero" :style="outlet.banner ? { backgroundImage: `linear-gradient(to right, rgba(15,12,41,.92) 0%, rgba(48,43,99,.85) 50%, rgba(36,36,62,.8) 100%), url(${outlet.banner})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}">
         <button class="od-back" @click="$router.push('/outlets')">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5"/><polyline points="12 19 5 12 12 5"/></svg>
+          <i class="ri-arrow-left-line"></i>
           Kembali
         </button>
         <div class="od-hero-content">
@@ -21,13 +21,13 @@
             <div class="od-hero-badges">
               <span class="od-hero-cat">{{ outlet.category_name || outlet.category || 'Franchise' }}</span>
               <span v-if="outlet.is_featured" class="od-hero-feat">
-                <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>
+                <i class="ri-star-fill" style="font-size:10px"></i>
                 Featured
               </span>
             </div>
             <h1 class="od-hero-title">{{ outlet.name }}</h1>
             <p class="od-hero-sub" v-if="outlet.city || outlet.province">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+              <i class="ri-map-pin-line"></i>
               {{ [outlet.city, outlet.province].filter(Boolean).join(', ') }}
             </p>
           </div>
@@ -59,7 +59,7 @@
           <!-- About -->
           <div class="od-section-card">
             <h3 class="od-section-title">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+              <i class="ri-information-line"></i>
               Tentang Outlet
             </h3>
             <div v-if="outlet.description" class="od-text od-html" v-html="outlet.description"></div>
@@ -69,7 +69,7 @@
           <!-- Requirements -->
           <div class="od-section-card" v-if="outlet.location_requirement">
             <h3 class="od-section-title">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+              <i class="ri-map-pin-line"></i>
               Persyaratan Lokasi
             </h3>
             <p class="od-text">{{ outlet.location_requirement }}</p>
@@ -78,24 +78,24 @@
           <!-- Contact -->
           <div class="od-section-card" v-if="outlet.contact_phone || outlet.contact_email || outlet.contact_whatsapp || outlet.website">
             <h3 class="od-section-title">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72"/></svg>
+              <i class="ri-phone-line"></i>
               Informasi Kontak
             </h3>
             <div class="od-contact-list">
               <div v-if="outlet.contact_phone" class="od-contact-item">
-                <div class="od-contact-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91"/></svg></div>
+                <div class="od-contact-icon"><i class="ri-phone-line"></i></div>
                 <div><div class="od-contact-label">Telepon</div><div class="od-contact-val">{{ outlet.contact_phone }}</div></div>
               </div>
               <div v-if="outlet.contact_email" class="od-contact-item">
-                <div class="od-contact-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></div>
+                <div class="od-contact-icon"><i class="ri-mail-line"></i></div>
                 <div><div class="od-contact-label">Email</div><div class="od-contact-val">{{ outlet.contact_email }}</div></div>
               </div>
               <div v-if="outlet.contact_whatsapp" class="od-contact-item">
-                <div class="od-contact-icon wa"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg></div>
+                <div class="od-contact-icon wa"><i class="ri-whatsapp-line"></i></div>
                 <div><div class="od-contact-label">WhatsApp</div><div class="od-contact-val">{{ outlet.contact_whatsapp }}</div></div>
               </div>
               <div v-if="outlet.website" class="od-contact-item">
-                <div class="od-contact-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/></svg></div>
+                <div class="od-contact-icon"><i class="ri-global-line"></i></div>
                 <div><div class="od-contact-label">Website</div><div class="od-contact-val">{{ outlet.website }}</div></div>
               </div>
             </div>
@@ -106,7 +106,7 @@
         <div class="od-sidebar">
           <div class="od-pkg-header">
             <h3>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+              <i class="ri-price-tag-3-line"></i>
               Paket Kemitraan
             </h3>
             <span class="od-pkg-count">{{ packages.length }} paket</span>
@@ -129,32 +129,32 @@
 
               <div class="od-pkg-specs">
                 <div v-if="pkg.duration" class="od-pkg-spec">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  <i class="ri-time-line"></i>
                   <span>{{ pkg.duration }}</span>
                 </div>
                 <div v-if="pkg.estimated_bep" class="od-pkg-spec">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+                  <i class="ri-line-chart-line" style="font-size:12px"></i>
                   <span>BEP {{ pkg.estimated_bep }}</span>
                 </div>
                 <div v-if="pkg.net_profit" class="od-pkg-spec">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                  <i class="ri-money-dollar-circle-line" style="font-size:12px"></i>
                   <span>Laba {{ pkg.net_profit }}</span>
                 </div>
                 <div v-if="pkg.minimum_dp" class="od-pkg-spec">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+                  <i class="ri-bank-card-line" style="font-size:12px"></i>
                   <span>DP min {{ fc(pkg.minimum_dp) }}</span>
                 </div>
               </div>
 
               <ul v-if="pkg.benefits && pkg.benefits.length" class="od-pkg-benefits">
                 <li v-for="(b, i) in pkg.benefits" :key="i">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                  <i class="ri-check-line"></i>
                   {{ b }}
                 </li>
               </ul>
 
               <button class="od-pkg-cta" @click="$router.push({ name: 'ApplyForm', params: { id: outlet.id }, query: { package: pkg.id } })">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                <i class="ri-send-plane-line"></i>
                 Ajukan Kemitraan
               </button>
             </div>
@@ -166,7 +166,7 @@
     <!-- Not Found -->
     <div v-else class="od-not-found">
       <div class="out-empty-circle">
-        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+        <i class="ri-close-circle-line"></i>
       </div>
       <p>Outlet tidak ditemukan</p>
       <button class="out-empty-btn" @click="$router.push('/outlets')">Kembali ke Daftar</button>

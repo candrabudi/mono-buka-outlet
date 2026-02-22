@@ -5,10 +5,7 @@
       <div class="login-left">
         <header class="login-logo">
           <div class="logo-icon">
-            <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-              <rect width="32" height="32" rx="8" fill="#fd9644"/>
-              <path d="M9 10H23V12H17V22H15V12H9V10ZM19 14H23V16H19V14Z" fill="white"/>
-            </svg>
+            <i class="ri-store-2-fill" style="font-size:32px;color:#fff;background:#fd9644;border-radius:8px;width:32px;height:32px;display:flex;align-items:center;justify-content:center"></i>
           </div>
           <span class="logo-text">BukaOutlet</span>
         </header>
@@ -24,9 +21,7 @@
               <div class="input-group">
                 <label for="name">Nama Lengkap</label>
                 <div class="input-wrapper">
-                  <svg class="input-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
-                  </svg>
+                  <i class="input-icon ri-user-line"></i>
                   <input id="name" v-model="form.name" type="text" placeholder="Nama lengkap Anda" required @blur="touched.name = true" />
                 </div>
                 <span v-if="touched.name && errors.name" class="field-error">{{ errors.name }}</span>
@@ -35,9 +30,7 @@
               <div class="input-group">
                 <label for="email">Email</label>
                 <div class="input-wrapper">
-                  <svg class="input-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                    <path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
-                  </svg>
+                  <i class="input-icon ri-mail-line"></i>
                   <input id="email" v-model="form.email" type="email" placeholder="mitra@email.com" required @blur="touched.email = true" />
                 </div>
                 <span v-if="touched.email && errors.email" class="field-error">{{ errors.email }}</span>
@@ -46,9 +39,7 @@
               <div class="input-group">
                 <label for="phone">No. Handphone</label>
                 <div class="input-wrapper">
-                  <svg class="input-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.12.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.36 1.85.64 2.81.7A2 2 0 0 1 22 16.92z"/>
-                  </svg>
+                  <i class="input-icon ri-phone-line"></i>
                   <input id="phone" v-model="form.phone" type="text" placeholder="08xxxxxxxxxx" @blur="touched.phone = true" />
                 </div>
                 <span v-if="touched.phone && errors.phone" class="field-error">{{ errors.phone }}</span>
@@ -57,14 +48,10 @@
               <div class="input-group">
                 <label for="password">Password</label>
                 <div class="input-wrapper">
-                  <svg class="input-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-                    <path d="M7 11V7a5 5 0 0110 0v4"/>
-                  </svg>
+                  <i class="input-icon ri-lock-line"></i>
                   <input id="password" v-model="form.password" :type="showPw ? 'text' : 'password'" placeholder="Min. 8 karakter" required @input="touched.password = true" />
                   <button type="button" class="toggle-password" @click="showPw = !showPw" tabindex="-1">
-                    <svg v-if="!showPw" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#718096" stroke-width="1.5"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
-                    <svg v-else width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#718096" stroke-width="1.5"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                    <i :class="showPw ? 'ri-eye-line' : 'ri-eye-off-line'" style="color:#718096"></i>
                   </button>
                 </div>
                 <!-- Password Strength Indicator -->
@@ -85,14 +72,10 @@
               <div class="input-group">
                 <label for="confirm_password">Konfirmasi Password</label>
                 <div class="input-wrapper">
-                  <svg class="input-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-                    <path d="M7 11V7a5 5 0 0110 0v4"/>
-                  </svg>
+                  <i class="input-icon ri-lock-line"></i>
                   <input id="confirm_password" v-model="form.confirm_password" :type="showPwConfirm ? 'text' : 'password'" placeholder="Ulangi password" required @blur="touched.confirm = true" />
                   <button type="button" class="toggle-password" @click="showPwConfirm = !showPwConfirm" tabindex="-1">
-                    <svg v-if="!showPwConfirm" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#718096" stroke-width="1.5"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
-                    <svg v-else width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#718096" stroke-width="1.5"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                    <i :class="showPwConfirm ? 'ri-eye-line' : 'ri-eye-off-line'" style="color:#718096"></i>
                   </button>
                 </div>
                 <span v-if="touched.confirm && errors.confirm" class="field-error">{{ errors.confirm }}</span>

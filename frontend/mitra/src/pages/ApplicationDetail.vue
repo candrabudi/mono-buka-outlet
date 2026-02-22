@@ -10,7 +10,7 @@
       <!-- Hero -->
       <div class="ad-hero">
         <button class="ad-back" @click="$router.push('/applications')">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5"/><polyline points="12 19 5 12 12 5"/></svg>
+          <i class="ri-arrow-left-line"></i>
           Kembali
         </button>
         <div class="ad-hero-content">
@@ -26,7 +26,7 @@
             </div>
             <h1 class="ad-hero-title">{{ app.outlet?.name || 'Pengajuan Kemitraan' }}</h1>
             <p class="ad-hero-sub">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              <i class="ri-calendar-line"></i>
               Diajukan {{ formatDate(app.created_at) }}
             </p>
           </div>
@@ -54,7 +54,7 @@
           <!-- Outlet Info -->
           <div class="ad-section">
             <h3 class="ad-section-title">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+              <i class="ri-home-5-line"></i>
               Informasi Outlet
             </h3>
             <div class="ad-info-grid">
@@ -76,7 +76,7 @@
           <!-- Paket -->
           <div class="ad-section" v-if="app.package">
             <h3 class="ad-section-title">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+              <i class="ri-price-tag-3-line"></i>
               Paket Kemitraan
             </h3>
             <div class="ad-info-grid">
@@ -111,7 +111,7 @@
           <!-- Lokasi & Budget -->
           <div class="ad-section">
             <h3 class="ad-section-title">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+              <i class="ri-map-pin-line"></i>
               Lokasi & Budget
             </h3>
             <div class="ad-info-grid">
@@ -129,7 +129,7 @@
           <!-- Kontak -->
           <div class="ad-section" v-if="app.contact_phone || app.contact_email">
             <h3 class="ad-section-title">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72"/></svg>
+              <i class="ri-phone-line"></i>
               Kontak yang Bisa Dihubungi
             </h3>
             <div class="ad-info-grid">
@@ -145,7 +145,7 @@
           </div>
           <div class="ad-section" v-if="app.motivation || app.experience">
             <h3 class="ad-section-title">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+              <i class="ri-information-line"></i>
               Motivasi & Pengalaman
             </h3>
             <div class="ad-text-section" v-if="app.motivation">
@@ -194,7 +194,7 @@
           <!-- Admin Notes -->
           <div class="ad-notes-card" v-if="app.admin_notes">
             <h3 class="ad-notes-title">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+              <i class="ri-chat-3-line"></i>
               Catatan Admin
             </h3>
             <p class="ad-notes-text">{{ app.admin_notes }}</p>
@@ -203,15 +203,15 @@
           <!-- Quick Actions -->
           <div class="ad-actions-card">
             <router-link :to="`/outlets/${app.outlet_id}`" class="ad-action-btn">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+              <i class="ri-home-5-line"></i>
               Lihat Outlet
             </router-link>
             <button v-if="app.status === 'PENDING'" class="ad-action-btn ad-action-danger" @click="showCancelModal = true">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+              <i class="ri-close-circle-line"></i>
               Batalkan Pengajuan
             </button>
             <router-link to="/applications" class="ad-action-btn ad-action-ghost">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+              <i class="ri-arrow-left-s-line"></i>
               Semua Pengajuan
             </router-link>
           </div>
@@ -222,7 +222,7 @@
     <!-- Not Found -->
     <div v-else class="ad-not-found">
       <div class="ad-empty-circle">
-        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+        <i class="ri-close-circle-line"></i>
       </div>
       <p>Pengajuan tidak ditemukan</p>
       <router-link to="/applications" class="ad-back-link">Kembali ke Daftar</router-link>

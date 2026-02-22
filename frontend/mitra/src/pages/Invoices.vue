@@ -33,7 +33,7 @@
             <td><span class="inv-date">{{ formatDate(inv.created_at) }}</span></td>
             <td>
               <a v-if="inv.midtrans_redirect_url && inv.status==='PENDING'" :href="inv.midtrans_redirect_url" target="_blank" class="inv-pay-btn">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+                <i class="ri-bank-card-line" style="font-size:14px"></i>
                 Bayar
               </a>
             </td>
@@ -41,7 +41,7 @@
         </tbody>
       </table>
       <div v-else class="inv-empty">
-        <div class="inv-empty-circle"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
+        <div class="inv-empty-circle"><i class="ri-file-text-line"></i></div>
         <p>Belum ada invoice</p>
       </div>
     </div>
