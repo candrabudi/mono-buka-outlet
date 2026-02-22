@@ -206,9 +206,9 @@
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
               Lihat Outlet
             </router-link>
-            <button v-if="app.status === 'PENDING'" class="ad-action-btn ad-action-danger" @click="confirmCancel" :disabled="cancelling">
+            <button v-if="app.status === 'PENDING'" class="ad-action-btn ad-action-danger" @click="showCancelModal = true">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
-              {{ cancelling ? 'Membatalkan...' : 'Batalkan Pengajuan' }}
+              Batalkan Pengajuan
             </button>
             <router-link to="/applications" class="ad-action-btn ad-action-ghost">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
@@ -227,6 +227,19 @@
       <p>Pengajuan tidak ditemukan</p>
       <router-link to="/applications" class="ad-back-link">Kembali ke Daftar</router-link>
     </div>
+
+    <!-- Cancel Modal -->
+    <ConfirmModal
+      v-model="showCancelModal"
+      variant="danger"
+      title="Batalkan Pengajuan?"
+      message="Pengajuan yang dibatalkan tidak bisa dikembalikan. Anda perlu mengajukan ulang jika ingin melanjutkan."
+      confirm-text="Ya, Batalkan"
+      cancel-text="Kembali"
+      loading-text="Membatalkan..."
+      :loading="cancelling"
+      @confirm="handleCancel"
+    />
   </div>
 </template>
 
@@ -235,6 +248,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { applicationApi } from '../services/api'
 import { useToastStore } from '../stores/toast'
+import ConfirmModal from '../components/ConfirmModal.vue'
 
 const route = useRoute()
 const toast = useToastStore()
@@ -248,13 +262,14 @@ function statusLabel(s) { return { PENDING: 'Menunggu', REVIEWED: 'Direview', AP
 const isReviewed = computed(() => ['REVIEWED', 'APPROVED', 'REJECTED'].includes(app.value?.status))
 const isFinal = computed(() => ['APPROVED', 'REJECTED', 'CANCELLED'].includes(app.value?.status))
 const cancelling = ref(false)
+const showCancelModal = ref(false)
 
-async function confirmCancel() {
-  if (!confirm('Yakin ingin membatalkan pengajuan ini? Tindakan ini tidak bisa dibatalkan.')) return
+async function handleCancel() {
   cancelling.value = true
   try {
     await applicationApi.cancel(app.value.id)
     app.value.status = 'CANCELLED'
+    showCancelModal.value = false
     toast.success('Pengajuan berhasil dibatalkan')
   } catch (e) {
     toast.error(e.response?.data?.error || 'Gagal membatalkan pengajuan')
