@@ -101,6 +101,8 @@ type ApplyRequest struct {
 	Experience       string    `json:"experience"`
 	ProposedLocation string    `json:"proposed_location"`
 	InvestmentBudget float64   `json:"investment_budget"`
+	ContactPhone     string    `json:"contact_phone" binding:"required"`
+	ContactEmail     string    `json:"contact_email" binding:"required,email"`
 }
 
 // Apply — mitra submits a partnership application
@@ -135,6 +137,8 @@ func (h *MitraHandler) Apply(c *gin.Context) {
 		Experience:       req.Experience,
 		ProposedLocation: req.ProposedLocation,
 		InvestmentBudget: req.InvestmentBudget,
+		ContactPhone:     req.ContactPhone,
+		ContactEmail:     req.ContactEmail,
 		Status:           entity.ApplicationStatusPending,
 		CreatedAt:        now,
 		UpdatedAt:        now,

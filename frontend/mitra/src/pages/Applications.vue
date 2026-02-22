@@ -42,7 +42,7 @@
 
     <!-- Cards List -->
     <div v-else class="app-list">
-      <div v-for="a in apps" :key="a.id" class="app-card">
+      <div v-for="a in apps" :key="a.id" class="app-card" @click="$router.push(`/applications/${a.id}`)" style="cursor:pointer">
         <div class="app-card-left">
           <div class="app-card-logo">
             <img v-if="a.outlet?.logo" :src="a.outlet.logo" :alt="a.outlet?.name" />

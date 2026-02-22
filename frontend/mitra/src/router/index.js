@@ -16,6 +16,7 @@ const routes = [
       { path: 'outlets/:id', name: 'OutletDetail', component: () => import('../pages/OutletDetail.vue') },
       { path: 'outlets/:id/apply', name: 'ApplyForm', component: () => import('../pages/ApplyForm.vue') },
       { path: 'applications', name: 'Applications', component: () => import('../pages/Applications.vue') },
+      { path: 'applications/:id', name: 'ApplicationDetail', component: () => import('../pages/ApplicationDetail.vue') },
       { path: 'invoices', name: 'Invoices', component: () => import('../pages/Invoices.vue') },
       { path: 'agreements', name: 'Agreements', component: () => import('../pages/Agreements.vue') },
       { path: 'locations', name: 'Locations', component: () => import('../pages/Locations.vue') },

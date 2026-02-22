@@ -20,12 +20,13 @@ func NewPartnershipApplicationRepo(db *sql.DB) *PartnershipApplicationRepo {
 
 func (r *PartnershipApplicationRepo) Create(ctx context.Context, app *entity.PartnershipApplication) error {
 	query := `
-		INSERT INTO partnership_applications (id, mitra_id, outlet_id, package_id, motivation, experience, proposed_location, investment_budget, status, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+		INSERT INTO partnership_applications (id, mitra_id, outlet_id, package_id, motivation, experience, proposed_location, investment_budget, contact_phone, contact_email, status, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
 	`
 	_, err := r.db.ExecContext(ctx, query,
 		app.ID, app.MitraID, app.OutletID, app.PackageID,
 		app.Motivation, app.Experience, app.ProposedLocation, app.InvestmentBudget,
+		app.ContactPhone, app.ContactEmail,
 		app.Status, app.CreatedAt, app.UpdatedAt,
 	)
 	return err
@@ -35,6 +36,7 @@ func (r *PartnershipApplicationRepo) FindByID(ctx context.Context, id uuid.UUID)
 	query := `
 		SELECT a.id, a.mitra_id, a.outlet_id, a.package_id,
 		       a.motivation, a.experience, a.proposed_location, a.investment_budget,
+		       a.contact_phone, a.contact_email,
 		       a.status, a.admin_notes, a.reviewed_by, a.reviewed_at,
 		       a.created_at, a.updated_at,
 		       u.id, u.name, u.email, u.phone,
@@ -58,6 +60,7 @@ func (r *PartnershipApplicationRepo) FindByID(ctx context.Context, id uuid.UUID)
 	err := row.Scan(
 		&app.ID, &app.MitraID, &app.OutletID, &app.PackageID,
 		&app.Motivation, &app.Experience, &app.ProposedLocation, &app.InvestmentBudget,
+		&app.ContactPhone, &app.ContactEmail,
 		&app.Status, &adminNotes, &reviewedBy, &reviewedAt,
 		&app.CreatedAt, &app.UpdatedAt,
 		&app.Mitra.ID, &app.Mitra.Name, &app.Mitra.Email, &app.Mitra.Phone,
@@ -86,6 +89,7 @@ func (r *PartnershipApplicationRepo) FindByMitraID(ctx context.Context, mitraID 
 	query := `
 		SELECT a.id, a.mitra_id, a.outlet_id, a.package_id,
 		       a.motivation, a.experience, a.proposed_location, a.investment_budget,
+		       a.contact_phone, a.contact_email,
 		       a.status, a.admin_notes, a.reviewed_at,
 		       a.created_at, a.updated_at,
 		       o.id, o.name, o.slug, o.logo, o.minimum_investment,
@@ -113,6 +117,7 @@ func (r *PartnershipApplicationRepo) FindByMitraID(ctx context.Context, mitraID 
 		err := rows.Scan(
 			&app.ID, &app.MitraID, &app.OutletID, &app.PackageID,
 			&app.Motivation, &app.Experience, &app.ProposedLocation, &app.InvestmentBudget,
+			&app.ContactPhone, &app.ContactEmail,
 			&app.Status, &adminNotes, &reviewedAt,
 			&app.CreatedAt, &app.UpdatedAt,
 			&app.Outlet.ID, &app.Outlet.Name, &app.Outlet.Slug, &app.Outlet.Logo, &app.Outlet.MinimumInvestment,

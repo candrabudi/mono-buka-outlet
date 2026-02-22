@@ -70,7 +70,7 @@
           <div class="af-steps">
             <div class="af-step" :class="{ active: step >= 1, done: step > 1 }"><span>1</span> Motivasi</div>
             <div class="af-step-line" :class="{ active: step > 1 }"></div>
-            <div class="af-step" :class="{ active: step >= 2, done: step > 2 }"><span>2</span> Detail</div>
+            <div class="af-step" :class="{ active: step >= 2, done: step > 2 }"><span>2</span> Kontak & Detail</div>
             <div class="af-step-line" :class="{ active: step > 2 }"></div>
             <div class="af-step" :class="{ active: step >= 3 }"><span>3</span> Konfirmasi</div>
           </div>
@@ -96,8 +96,28 @@
             </div>
           </div>
 
-          <!-- Step 2: Details -->
+          <!-- Step 2: Contact + Details -->
           <div v-show="step === 2" class="af-step-content">
+            <div class="af-field-row">
+              <div class="af-field">
+                <label>No. HP yang Bisa Dihubungi <span class="af-req">*</span></label>
+                <p class="af-hint">Nomor aktif untuk komunikasi terkait pengajuan</p>
+                <div class="af-input-prefix-wrap">
+                  <span class="af-input-prefix"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72"/></svg></span>
+                  <input v-model="form.contact_phone" type="text" placeholder="08xxxxxxxxxx" class="af-input with-prefix" />
+                </div>
+                <span v-if="form.contact_phone && !isPhoneValid" class="af-field-error">Format: 08xx atau +62xx</span>
+              </div>
+              <div class="af-field">
+                <label>Email yang Bisa Dihubungi <span class="af-req">*</span></label>
+                <p class="af-hint">Email aktif untuk menerima informasi pengajuan</p>
+                <div class="af-input-prefix-wrap">
+                  <span class="af-input-prefix"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg></span>
+                  <input v-model="form.contact_email" type="email" placeholder="email@contoh.com" class="af-input with-prefix" />
+                </div>
+                <span v-if="form.contact_email && !isEmailValid" class="af-field-error">Format email tidak valid</span>
+              </div>
+            </div>
             <div class="af-field">
               <label>Rencana Lokasi <span class="af-req">*</span></label>
               <p class="af-hint">Lokasi yang Anda rencanakan untuk mendirikan outlet</p>
@@ -117,7 +137,7 @@
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
                 Kembali
               </button>
-              <button type="button" class="af-btn-next" @click="step = 3" :disabled="!form.proposed_location.trim() || !form.investment_budget">
+              <button type="button" class="af-btn-next" @click="step = 3" :disabled="!canStep3">
                 Lanjutkan
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
               </button>
@@ -142,6 +162,14 @@
               <div class="af-confirm-item full" v-if="form.experience">
                 <div class="af-confirm-label">Pengalaman</div>
                 <div class="af-confirm-val">{{ form.experience }}</div>
+              </div>
+              <div class="af-confirm-item">
+                <div class="af-confirm-label">No. HP Kontak</div>
+                <div class="af-confirm-val">{{ form.contact_phone }}</div>
+              </div>
+              <div class="af-confirm-item">
+                <div class="af-confirm-label">Email Kontak</div>
+                <div class="af-confirm-val">{{ form.contact_email }}</div>
               </div>
               <div class="af-confirm-item">
                 <div class="af-confirm-label">Lokasi</div>
@@ -177,7 +205,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { outletApi, applicationApi } from '../services/api'
 import { useToastStore } from '../stores/toast'
@@ -192,7 +220,11 @@ const selectedPkg = ref(null)
 const loading = ref(true)
 const submitting = ref(false)
 const step = ref(1)
-const form = reactive({ motivation: '', experience: '', proposed_location: '', investment_budget: 0 })
+const form = reactive({ motivation: '', experience: '', proposed_location: '', investment_budget: 0, contact_phone: '', contact_email: '' })
+
+const isPhoneValid = computed(() => /^(\+62|62|08)[0-9]{8,13}$/.test(form.contact_phone.replace(/[\s-]/g, '')))
+const isEmailValid = computed(() => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.contact_email))
+const canStep3 = computed(() => form.contact_phone.trim() && isPhoneValid.value && form.contact_email.trim() && isEmailValid.value && form.proposed_location.trim() && form.investment_budget > 0)
 
 function fc(v) { return v ? new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(v) : '-' }
 
@@ -290,6 +322,8 @@ onMounted(loadData)
 .af-input-prefix-wrap{position:relative}
 .af-input-prefix{position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:.85rem;font-weight:700;color:#94a3b8}
 .af-input.with-prefix{padding-left:40px}
+.af-field-error{display:block;font-size:.72rem;color:#ef4444;font-weight:500;margin-top:4px}
+.af-field-row{display:grid;grid-template-columns:1fr 1fr;gap:16px}
 .af-budget-formatted{font-size:.78rem;color:#6366f1;font-weight:600;margin:6px 0 0}
 
 /* ═══ Actions ═══ */

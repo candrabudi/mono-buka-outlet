@@ -15,6 +15,8 @@ type PartnershipApplication struct {
 	Experience       string     `json:"experience"`
 	ProposedLocation string     `json:"proposed_location"`
 	InvestmentBudget float64    `json:"investment_budget"`
+	ContactPhone     string     `json:"contact_phone"`
+	ContactEmail     string     `json:"contact_email"`
 	Status           string     `json:"status"`
 	AdminNotes       string     `json:"admin_notes,omitempty"`
 	ReviewedBy       *uuid.UUID `json:"reviewed_by,omitempty"`
