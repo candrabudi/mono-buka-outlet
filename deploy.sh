@@ -244,7 +244,19 @@ log "📦 Deploying panel..."
 mkdir -p "$PANEL_DEPLOY"
 rm -rf "${PANEL_DEPLOY:?}"/*
 cp -r "$REPO_DIR/frontend/panel/dist/"* "$PANEL_DEPLOY/"
-ok "Panel deployed → $PANEL_DEPLOY"
+
+# .htaccess for Vue Router (OpenLiteSpeed/CyberPanel)
+cat > "$PANEL_DEPLOY/.htaccess" << 'HTEOF'
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+  RewriteRule ^index\.html$ - [L]
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule . /index.html [L]
+</IfModule>
+HTEOF
+ok "Panel deployed → $PANEL_DEPLOY (with .htaccess)"
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 # 8. BUILD & DEPLOY MITRA FRONTEND
@@ -259,7 +271,19 @@ log "📦 Deploying mitra..."
 mkdir -p "$MITRA_DEPLOY"
 rm -rf "${MITRA_DEPLOY:?}"/*
 cp -r "$REPO_DIR/frontend/mitra/dist/"* "$MITRA_DEPLOY/"
-ok "Mitra deployed → $MITRA_DEPLOY"
+
+# .htaccess for Vue Router (OpenLiteSpeed/CyberPanel)
+cat > "$MITRA_DEPLOY/.htaccess" << 'HTEOF'
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+  RewriteRule ^index\.html$ - [L]
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule . /index.html [L]
+</IfModule>
+HTEOF
+ok "Mitra deployed → $MITRA_DEPLOY (with .htaccess)"
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 # DONE
