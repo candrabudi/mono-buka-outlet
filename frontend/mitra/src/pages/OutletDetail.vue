@@ -62,7 +62,8 @@
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
               Tentang Outlet
             </h3>
-            <p class="od-text">{{ outlet.description || 'Belum ada deskripsi' }}</p>
+            <div v-if="outlet.description" class="od-text od-html" v-html="outlet.description"></div>
+            <p v-else class="od-text">Belum ada deskripsi</p>
           </div>
 
           <!-- Requirements -->
@@ -231,6 +232,25 @@ onMounted(() => { fetchOutlet(); fetchPackages() })
 .od-section-title{font-size:.88rem;font-weight:700;color:#0f172a;margin:0 0 14px;display:flex;align-items:center;gap:8px}
 .od-section-title svg{color:#6366f1}
 .od-text{font-size:.85rem;color:#475569;line-height:1.7;margin:0;white-space:pre-wrap}
+
+/* Rich HTML content from editor */
+.od-html{font-size:.85rem;color:#475569;line-height:1.7}
+.od-html :deep(p){margin:0 0 12px}
+.od-html :deep(p:last-child){margin-bottom:0}
+.od-html :deep(h1),.od-html :deep(h2),.od-html :deep(h3),.od-html :deep(h4){color:#0f172a;margin:16px 0 8px;font-weight:700}
+.od-html :deep(h1){font-size:1.3rem}
+.od-html :deep(h2){font-size:1.15rem}
+.od-html :deep(h3){font-size:1rem}
+.od-html :deep(ul),.od-html :deep(ol){padding-left:20px;margin:8px 0}
+.od-html :deep(li){margin-bottom:4px}
+.od-html :deep(a){color:#6366f1;text-decoration:underline}
+.od-html :deep(a:hover){color:#4f46e5}
+.od-html :deep(strong),.od-html :deep(b){font-weight:700;color:#334155}
+.od-html :deep(img){max-width:100%;height:auto;border-radius:8px;margin:8px 0}
+.od-html :deep(table){width:100%;border-collapse:collapse;margin:8px 0}
+.od-html :deep(th),.od-html :deep(td){padding:8px 12px;border:1px solid #e2e8f0;font-size:.82rem;text-align:left}
+.od-html :deep(th){background:#f8fafc;font-weight:600;color:#334155}
+.od-html :deep(blockquote){border-left:3px solid #818cf8;padding:8px 16px;margin:8px 0;background:#f8fafc;color:#475569;font-style:italic}
 
 /* ═══ Contact ═══ */
 .od-contact-list{display:flex;flex-direction:column;gap:12px}
