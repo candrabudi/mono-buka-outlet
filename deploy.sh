@@ -1,25 +1,58 @@
 #!/bin/bash
-# ═══════════════════════════════════════════════════
-#  BukaOutlet — Deploy Script
-#  Pulls latest code, builds, deploys to production
-# ═══════════════════════════════════════════════════
+# ═══════════════════════════════════════════════════════════════
+#  BukaOutlet — Production Deploy Script
+#  Auto: create DB, migrate, seed, build, deploy
+# ═══════════════════════════════════════════════════════════════
 
 set -e
 
-# ── Config ──────────────────────────────────────────
-REPO_DIR="/home/outlet_ready"                    # clone directory di server
-PANEL_DEPLOY="/home/apbo.dinanfarm.com"          # panel frontend
-API_DEPLOY="/home/apibo.dinanfarm.com"           # backend API
-MITRA_DEPLOY="/home/merbo.dinanfarm.com"         # mitra frontend
-PM2_APP_NAME="bukaoutlet-api"                    # nama proses PM2
-API_PORT="8080"                                  # port backend
+# ┌──────────────────────────────────────────────────────────────
+# │ CONFIG — Sesuaikan bagian ini
+# └──────────────────────────────────────────────────────────────
+REPO_DIR="/home/outlet_ready"
 
-# ── Colors ──────────────────────────────────────────
+# Domain paths
+PANEL_DEPLOY="/home/apbo.dinanfarm.com"
+API_DEPLOY="/home/apibo.dinanfarm.com"
+MITRA_DEPLOY="/home/merbo.dinanfarm.com"
+
+# Domain URLs (untuk .env frontend)
+PANEL_DOMAIN="https://apbo.dinanfarm.com"
+API_DOMAIN="https://apibo.dinanfarm.com"
+MITRA_DOMAIN="https://merbo.dinanfarm.com"
+
+# Backend
+PM2_APP_NAME="bukaoutlet-api"
+API_PORT="8080"
+
+# Database
+DB_HOST="localhost"
+DB_PORT="5432"
+DB_USER="postgres"
+DB_PASS="postgres"
+DB_NAME="franchise_db"
+DB_SSLMODE="disable"
+
+# JWT
+JWT_SECRET="MziXzIQePg0Vm84m1J48GpdIyNBEXTxrnRQ09RIQkcfe7GT8E4EksLNi6btUS4ocOtALl5YRpZutCnU2DQq1Tg"
+
+# SMTP
+SMTP_HOST="smtp.gmail.com"
+SMTP_PORT="587"
+SMTP_USERNAME="bagus.candrabudi@gmail.com"
+SMTP_PASSWORD="uyfqcvoongkllxft"
+SMTP_FROM="bagus.candrabudi@gmail.com"
+SMTP_FROM_NAME="BukaOutlet"
+
+# ┌──────────────────────────────────────────────────────────────
+# │ HELPERS
+# └──────────────────────────────────────────────────────────────
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 CYAN='\033[0;36m'
 RED='\033[0;31m'
 NC='\033[0m'
+BOLD='\033[1m'
 
 log()  { echo -e "${CYAN}[$(date '+%H:%M:%S')]${NC} $1"; }
 ok()   { echo -e "${GREEN}  ✔ $1${NC}"; }
@@ -27,100 +60,186 @@ warn() { echo -e "${YELLOW}  ⚠ $1${NC}"; }
 fail() { echo -e "${RED}  ✘ $1${NC}"; exit 1; }
 
 echo ""
-echo -e "${CYAN}══════════════════════════════════════════════${NC}"
-echo -e "${CYAN}  🚀 BukaOutlet Deploy${NC}"
-echo -e "${CYAN}══════════════════════════════════════════════${NC}"
+echo -e "${BOLD}${CYAN}══════════════════════════════════════════════════${NC}"
+echo -e "${BOLD}${CYAN}  🚀 BukaOutlet — Production Deploy${NC}"
+echo -e "${BOLD}${CYAN}══════════════════════════════════════════════════${NC}"
 echo ""
 
-# ── 1. Pull Latest Code ────────────────────────────
-log "📥  Pulling latest code..."
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# 1. GIT PULL
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+log "📥 Pulling latest code..."
 cd "$REPO_DIR"
 git pull origin master || fail "Git pull gagal"
 ok "Code updated"
 
-# ── 2. Build Backend (Go) ──────────────────────────
-log "🔨  Building backend..."
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# 2. DATABASE — Auto create if not exists
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+log "�️  Checking database..."
+DB_EXISTS=$(PGPASSWORD="$DB_PASS" psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -tAc "SELECT 1 FROM pg_database WHERE datname='$DB_NAME'" 2>/dev/null || echo "")
+
+if [ "$DB_EXISTS" != "1" ]; then
+  log "  Creating database '$DB_NAME'..."
+  PGPASSWORD="$DB_PASS" createdb -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" "$DB_NAME" || fail "Gagal membuat database"
+  ok "Database '$DB_NAME' created"
+else
+  ok "Database '$DB_NAME' already exists — skipped"
+fi
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# 3. BACKEND .env — Auto generate
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+log "📝 Generating backend .env..."
+mkdir -p "$API_DEPLOY"
+cat > "$API_DEPLOY/.env" << ENVEOF
+# Application
+APP_NAME=franchise-system
+APP_ENV=production
+APP_PORT=${API_PORT}
+APP_URL=${API_DOMAIN}
+
+# Database
+DB_HOST=${DB_HOST}
+DB_PORT=${DB_PORT}
+DB_USER=${DB_USER}
+DB_PASSWORD=${DB_PASS}
+DB_NAME=${DB_NAME}
+DB_SSLMODE=${DB_SSLMODE}
+
+# JWT
+JWT_SECRET=${JWT_SECRET}
+JWT_EXPIRY_HOURS=24
+JWT_REFRESH_EXPIRY_HOURS=168
+
+# CORS
+CORS_ALLOWED_ORIGINS=${PANEL_DOMAIN},${MITRA_DOMAIN}
+CORS_ALLOWED_METHODS=GET,POST,PUT,PATCH,DELETE,OPTIONS
+CORS_ALLOWED_HEADERS=Content-Type,Authorization
+
+# SMTP
+SMTP_HOST=${SMTP_HOST}
+SMTP_PORT=${SMTP_PORT}
+SMTP_USERNAME=${SMTP_USERNAME}
+SMTP_PASSWORD=${SMTP_PASSWORD}
+SMTP_FROM=${SMTP_FROM}
+SMTP_FROM_NAME=${SMTP_FROM_NAME}
+
+# File Upload
+UPLOAD_DIR=./uploads
+MAX_UPLOAD_SIZE=10485760
+ENVEOF
+ok "Backend .env generated (port: ${API_PORT})"
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# 4. BUILD BACKEND
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+log "🔨 Building backend..."
 cd "$REPO_DIR/backend"
 go build -o bukaoutlet-api ./cmd/api || fail "Go build gagal"
 ok "Backend binary built"
 
-# ── 3. Build Panel Frontend ────────────────────────
-log "🎨  Building panel frontend..."
-cd "$REPO_DIR/frontend/panel"
-npm install --silent 2>/dev/null
-npm run build || fail "Panel build gagal"
-ok "Panel frontend built"
-
-# ── 4. Build Mitra Frontend ────────────────────────
-log "🎨  Building mitra frontend..."
-cd "$REPO_DIR/frontend/mitra"
-npm install --silent 2>/dev/null
-npm run build || fail "Mitra build gagal"
-ok "Mitra frontend built"
-
-# ── 5. Deploy Backend API ──────────────────────────
-log "📦  Deploying backend API..."
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# 5. DEPLOY BACKEND + MIGRATE + SEED
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+log "📦 Deploying backend..."
 
 # Copy binary
 cp "$REPO_DIR/backend/bukaoutlet-api" "$API_DEPLOY/bukaoutlet-api"
-
-# Copy .env if not exists
-if [ ! -f "$API_DEPLOY/.env" ]; then
-  cp "$REPO_DIR/backend/.env" "$API_DEPLOY/.env"
-  warn ".env copied — pastikan config production sudah benar!"
-fi
 
 # Copy migrations
 mkdir -p "$API_DEPLOY/migrations"
 cp -r "$REPO_DIR/backend/migrations/"* "$API_DEPLOY/migrations/" 2>/dev/null || true
 
-# Copy uploads folder structure
+# Copy uploads folder
 mkdir -p "$API_DEPLOY/uploads"
 
-# Restart with PM2
+ok "Backend files deployed"
+
+# Run migrations (auto-skips already applied)
+log "🗄️  Running migrations..."
+cd "$API_DEPLOY"
+./bukaoutlet-api -migrate 2>&1 | while read line; do echo "  $line"; done || true
+ok "Migrations done (new ones applied, existing skipped)"
+
+# Run seed (auto-skips existing data)
+log "🌱 Running seeders..."
+cd "$API_DEPLOY"
+./bukaoutlet-api -seed 2>&1 | while read line; do echo "  $line"; done || true
+ok "Seeders done (existing data skipped)"
+
+# Start/Restart with PM2
+log "⚡ Starting backend with PM2..."
 cd "$API_DEPLOY"
 if pm2 describe "$PM2_APP_NAME" > /dev/null 2>&1; then
   pm2 restart "$PM2_APP_NAME"
-  ok "Backend restarted via PM2"
+  ok "Backend restarted (PM2: $PM2_APP_NAME)"
 else
   pm2 start ./bukaoutlet-api --name "$PM2_APP_NAME" --cwd "$API_DEPLOY"
   pm2 save
-  ok "Backend started via PM2 (new process)"
+  ok "Backend started (PM2: $PM2_APP_NAME, port: $API_PORT)"
 fi
 
-# ── 6. Deploy Panel Frontend ──────────────────────
-log "📦  Deploying panel frontend..."
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# 6. FRONTEND .env — Auto generate
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+log "📝 Generating frontend .env files..."
+
+# Panel .env
+cat > "$REPO_DIR/frontend/panel/.env.production" << ENVEOF
+VITE_API_BASE_URL=${API_DOMAIN}/api/v1/admin
+ENVEOF
+ok "Panel .env.production → ${API_DOMAIN}/api/v1/admin"
+
+# Mitra .env
+cat > "$REPO_DIR/frontend/mitra/.env.production" << ENVEOF
+VITE_API_BASE_URL=${API_DOMAIN}/api/v1/mitra
+ENVEOF
+ok "Mitra .env.production → ${API_DOMAIN}/api/v1/mitra"
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# 7. BUILD & DEPLOY PANEL FRONTEND
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+log "🎨 Building panel frontend..."
+cd "$REPO_DIR/frontend/panel"
+npm install --silent 2>/dev/null
+npm run build || fail "Panel build gagal"
+ok "Panel built"
+
+log "📦 Deploying panel..."
 mkdir -p "$PANEL_DEPLOY"
-rm -rf "$PANEL_DEPLOY"/*
+rm -rf "${PANEL_DEPLOY:?}"/*
 cp -r "$REPO_DIR/frontend/panel/dist/"* "$PANEL_DEPLOY/"
-ok "Panel deployed to $PANEL_DEPLOY"
+ok "Panel deployed → $PANEL_DEPLOY"
 
-# ── 7. Deploy Mitra Frontend ──────────────────────
-log "📦  Deploying mitra frontend..."
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# 8. BUILD & DEPLOY MITRA FRONTEND
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+log "🎨 Building mitra frontend..."
+cd "$REPO_DIR/frontend/mitra"
+npm install --silent 2>/dev/null
+npm run build || fail "Mitra build gagal"
+ok "Mitra built"
+
+log "📦 Deploying mitra..."
 mkdir -p "$MITRA_DEPLOY"
-rm -rf "$MITRA_DEPLOY"/*
+rm -rf "${MITRA_DEPLOY:?}"/*
 cp -r "$REPO_DIR/frontend/mitra/dist/"* "$MITRA_DEPLOY/"
-ok "Mitra deployed to $MITRA_DEPLOY"
+ok "Mitra deployed → $MITRA_DEPLOY"
 
-# ── 8. Run Migrations ─────────────────────────────
-log "🗄️  Running database migrations..."
-cd "$API_DEPLOY"
-./bukaoutlet-api -migrate &
-MIGRATE_PID=$!
-sleep 3
-kill $MIGRATE_PID 2>/dev/null || true
-ok "Migrations executed"
-
-# ── Done! ─────────────────────────────────────────
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# DONE
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 echo ""
-echo -e "${GREEN}══════════════════════════════════════════════${NC}"
-echo -e "${GREEN}  ✅ Deploy selesai!${NC}"
-echo -e "${GREEN}══════════════════════════════════════════════${NC}"
+echo -e "${BOLD}${GREEN}══════════════════════════════════════════════════${NC}"
+echo -e "${BOLD}${GREEN}  ✅ Deploy Selesai!${NC}"
+echo -e "${BOLD}${GREEN}══════════════════════════════════════════════════${NC}"
 echo ""
-echo -e "  Panel  →  https://apbo.dinanfarm.com"
-echo -e "  API    →  https://apibo.dinanfarm.com"
-echo -e "  Mitra  →  https://merbo.dinanfarm.com"
+echo -e "  ${BOLD}Panel${NC}   →  ${PANEL_DOMAIN}"
+echo -e "  ${BOLD}API${NC}     →  ${API_DOMAIN} (port: ${API_PORT})"
+echo -e "  ${BOLD}Mitra${NC}   →  ${MITRA_DOMAIN}"
 echo ""
-echo -e "  PM2 status:"
+echo -e "  ${BOLD}Database${NC} →  ${DB_NAME}@${DB_HOST}:${DB_PORT}"
+echo ""
 pm2 status "$PM2_APP_NAME"
 echo ""
