@@ -75,11 +75,17 @@ func (uc *DashboardUseCase) GetStats(ctx context.Context, brandID *uuid.UUID) (*
 	uc.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM partnership_applications WHERE status = 'PENDING'").Scan(&stats.PendingApplications)
 	uc.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM invoices WHERE status = 'PENDING'").Scan(&stats.PendingInvoices)
 	uc.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM invoices WHERE status = 'PAID'").Scan(&stats.PaidInvoices)
-	uc.db.QueryRowContext(ctx, "SELECT COALESCE(SUM(amount),0) FROM invoices WHERE status = 'PAID'").Scan(&stats.TotalIncomeAmount)
-	uc.db.QueryRowContext(ctx, "SELECT COALESCE(SUM(amount),0) FROM invoices WHERE status = 'PENDING'").Scan(&stats.PendingInvoiceAmount)
-	uc.db.QueryRowContext(ctx, "SELECT COALESCE(SUM(amount),0) FROM payments WHERE status = 'VERIFIED'").Scan(&stats.TotalPaymentsVerified)
 	uc.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM users WHERE role = 'mitra' AND is_active = true").Scan(&stats.TotalMitra)
 	uc.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM users WHERE is_active = true").Scan(&stats.TotalUsers)
+
+	// Monetary — cast BIGINT to NUMERIC for safe float64 scan
+	var incomeAmt, pendingAmt, verifiedAmt int64
+	uc.db.QueryRowContext(ctx, "SELECT COALESCE(SUM(amount),0)::BIGINT FROM invoices WHERE status = 'PAID'").Scan(&incomeAmt)
+	uc.db.QueryRowContext(ctx, "SELECT COALESCE(SUM(amount),0)::BIGINT FROM invoices WHERE status = 'PENDING'").Scan(&pendingAmt)
+	uc.db.QueryRowContext(ctx, "SELECT COALESCE(SUM(amount),0)::BIGINT FROM payments WHERE status = 'VERIFIED'").Scan(&verifiedAmt)
+	stats.TotalIncomeAmount = float64(incomeAmt)
+	stats.PendingInvoiceAmount = float64(pendingAmt)
+	stats.TotalPaymentsVerified = float64(verifiedAmt)
 
 	// Partnerships by status
 	stats.PartnershipsByStatus = map[string]int{}
