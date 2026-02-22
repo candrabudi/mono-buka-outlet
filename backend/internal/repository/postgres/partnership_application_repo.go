@@ -222,3 +222,37 @@ func (r *PartnershipApplicationRepo) UpdateStatus(ctx context.Context, id uuid.U
 	_, err := r.db.ExecContext(ctx, query, status, adminNotes, reviewedBy, now, now, id)
 	return err
 }
+
+// HasActiveApplication checks if mitra already has PENDING or REVIEWED application for the same outlet+package
+func (r *PartnershipApplicationRepo) HasActiveApplication(ctx context.Context, mitraID, outletID, packageID uuid.UUID) (bool, error) {
+	query := `
+		SELECT COUNT(*) FROM partnership_applications
+		WHERE mitra_id = $1 AND outlet_id = $2 AND package_id = $3
+		AND status IN ('PENDING', 'REVIEWED')
+	`
+	var count int
+	err := r.db.QueryRowContext(ctx, query, mitraID, outletID, packageID).Scan(&count)
+	if err != nil {
+		return false, err
+	}
+	return count > 0, nil
+}
+
+// CancelByMitra cancels an application — only if owned by mitra and status is PENDING
+func (r *PartnershipApplicationRepo) CancelByMitra(ctx context.Context, id, mitraID uuid.UUID) error {
+	query := `
+		UPDATE partnership_applications
+		SET status = $1, updated_at = $2
+		WHERE id = $3 AND mitra_id = $4 AND status = 'PENDING'
+	`
+	now := time.Now()
+	result, err := r.db.ExecContext(ctx, query, entity.ApplicationStatusCancelled, now, id, mitraID)
+	if err != nil {
+		return err
+	}
+	rows, _ := result.RowsAffected()
+	if rows == 0 {
+		return fmt.Errorf("pengajuan tidak ditemukan atau tidak bisa dibatalkan")
+	}
+	return nil
+}

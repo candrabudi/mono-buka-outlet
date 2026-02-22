@@ -177,4 +177,6 @@ type PartnershipApplicationRepository interface {
 	FindByMitraID(ctx context.Context, mitraID uuid.UUID) ([]*entity.PartnershipApplication, error)
 	FindAll(ctx context.Context, status string, page, limit int) ([]*entity.PartnershipApplication, int, error)
 	UpdateStatus(ctx context.Context, id uuid.UUID, status, adminNotes string, reviewedBy uuid.UUID) error
+	HasActiveApplication(ctx context.Context, mitraID, outletID, packageID uuid.UUID) (bool, error)
+	CancelByMitra(ctx context.Context, id, mitraID uuid.UUID) error
 }

@@ -206,6 +206,10 @@
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
               Lihat Outlet
             </router-link>
+            <button v-if="app.status === 'PENDING'" class="ad-action-btn ad-action-danger" @click="confirmCancel" :disabled="cancelling">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+              {{ cancelling ? 'Membatalkan...' : 'Batalkan Pengajuan' }}
+            </button>
             <router-link to="/applications" class="ad-action-btn ad-action-ghost">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
               Semua Pengajuan
@@ -239,10 +243,25 @@ const loading = ref(true)
 
 function fc(v) { return v ? new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(v) : '-' }
 function formatDate(d) { return d ? new Date(d).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : '-' }
-function statusLabel(s) { return { PENDING: 'Menunggu', REVIEWED: 'Direview', APPROVED: 'Disetujui', REJECTED: 'Ditolak' }[s] || s }
+function statusLabel(s) { return { PENDING: 'Menunggu', REVIEWED: 'Direview', APPROVED: 'Disetujui', REJECTED: 'Ditolak', CANCELLED: 'Dibatalkan' }[s] || s }
 
 const isReviewed = computed(() => ['REVIEWED', 'APPROVED', 'REJECTED'].includes(app.value?.status))
-const isFinal = computed(() => ['APPROVED', 'REJECTED'].includes(app.value?.status))
+const isFinal = computed(() => ['APPROVED', 'REJECTED', 'CANCELLED'].includes(app.value?.status))
+const cancelling = ref(false)
+
+async function confirmCancel() {
+  if (!confirm('Yakin ingin membatalkan pengajuan ini? Tindakan ini tidak bisa dibatalkan.')) return
+  cancelling.value = true
+  try {
+    await applicationApi.cancel(app.value.id)
+    app.value.status = 'CANCELLED'
+    toast.success('Pengajuan berhasil dibatalkan')
+  } catch (e) {
+    toast.error(e.response?.data?.error || 'Gagal membatalkan pengajuan')
+  } finally {
+    cancelling.value = false
+  }
+}
 
 onMounted(async () => {
   try {
@@ -284,6 +303,8 @@ onMounted(async () => {
 .as-APPROVED .ad-badge-dot{background:#22c55e}
 .as-REJECTED{background:rgba(239,68,68,.15);color:#f87171}
 .as-REJECTED .ad-badge-dot{background:#ef4444}
+.as-CANCELLED{background:rgba(148,163,184,.15);color:#94a3b8}
+.as-CANCELLED .ad-badge-dot{background:#94a3b8}
 
 /* ═══ Content ═══ */
 .ad-content{display:grid;grid-template-columns:1fr 340px;gap:24px;align-items:start}
@@ -336,6 +357,9 @@ onMounted(async () => {
 .ad-action-btn:hover{box-shadow:0 4px 14px rgba(99,102,241,.35);transform:translateY(-1px)}
 .ad-action-ghost{background:#fff;color:#475569;border:1px solid #e8ecf1;box-shadow:none}
 .ad-action-ghost:hover{background:#f8fafc;box-shadow:0 2px 8px rgba(0,0,0,.04)}
+.ad-action-danger{background:#fff;color:#ef4444;border:1px solid #fecaca;box-shadow:none;cursor:pointer;font-family:inherit}
+.ad-action-danger:hover:not(:disabled){background:#fef2f2;border-color:#fca5a5}
+.ad-action-danger:disabled{opacity:.5;cursor:not-allowed}
 
 /* ═══ Not Found ═══ */
 .ad-not-found{text-align:center;padding:80px 20px;background:#fff;border-radius:16px;border:1px solid #e8ecf1}

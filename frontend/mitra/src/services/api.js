@@ -52,6 +52,7 @@ export const applicationApi = {
   apply: (data) => api.post('/applications', data),
   myList: () => api.get('/applications'),
   getByID: (id) => api.get(`/applications/${id}`),
+  cancel: (id) => api.post(`/applications/${id}/cancel`),
 }
 
 // Partnership (own)

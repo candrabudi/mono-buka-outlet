@@ -92,7 +92,7 @@ const loading = ref(true)
 
 function fc(v) { return v ? new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(v) : '-' }
 function formatDate(d) { return d ? new Date(d).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : '-' }
-function statusLabel(s) { return { PENDING: 'Menunggu', REVIEWED: 'Direview', APPROVED: 'Disetujui', REJECTED: 'Ditolak' }[s] || s }
+function statusLabel(s) { return { PENDING: 'Menunggu', REVIEWED: 'Direview', APPROVED: 'Disetujui', REJECTED: 'Ditolak', CANCELLED: 'Dibatalkan' }[s] || s }
 
 onMounted(async () => {
   try { const { data } = await applicationApi.myList(); apps.value = data.data || [] }
@@ -159,6 +159,8 @@ onMounted(async () => {
 .as-APPROVED .app-badge-dot{background:#22c55e}
 .as-REJECTED{background:#fee2e2;color:#991b1b}
 .as-REJECTED .app-badge-dot{background:#ef4444}
+.as-CANCELLED{background:#f1f5f9;color:#64748b}
+.as-CANCELLED .app-badge-dot{background:#94a3b8}
 
 /* ═══ Notes ═══ */
 .app-card-notes{grid-column:1/-1;display:flex;align-items:flex-start;gap:8px;padding:12px 14px;background:#f8fafc;border-radius:8px;font-size:.8rem;color:#475569;line-height:1.5;margin-top:4px}

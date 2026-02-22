@@ -127,6 +127,17 @@ func (h *MitraHandler) Apply(c *gin.Context) {
 		return
 	}
 
+	// Check for duplicate active application
+	hasActive, err := h.appRepo.HasActiveApplication(c.Request.Context(), mitraID, req.OutletID, req.PackageID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": "Gagal mengecek pengajuan"})
+		return
+	}
+	if hasActive {
+		c.JSON(http.StatusConflict, gin.H{"success": false, "error": "Anda sudah memiliki pengajuan aktif untuk outlet dan paket ini"})
+		return
+	}
+
 	now := time.Now()
 	app := &entity.PartnershipApplication{
 		ID:               uuid.New(),
@@ -150,6 +161,21 @@ func (h *MitraHandler) Apply(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, gin.H{"success": true, "data": app, "message": "Pengajuan berhasil dikirim"})
+}
+
+// CancelApplication — mitra cancels their own PENDING application
+func (h *MitraHandler) CancelApplication(c *gin.Context) {
+	mitraID := c.MustGet("user_id").(uuid.UUID)
+	appID, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "ID tidak valid"})
+		return
+	}
+	if err := h.appRepo.CancelByMitra(c.Request.Context(), appID, mitraID); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"success": true, "message": "Pengajuan berhasil dibatalkan"})
 }
 
 // MyApplications — list mitra's own applications

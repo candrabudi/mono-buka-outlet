@@ -42,6 +42,7 @@ func RegisterMitraRoutes(r *gin.Engine, h Handlers, jwtSecret string) {
 			mitraProtected.POST("/applications", h.Mitra.Apply)
 			mitraProtected.GET("/applications", h.Mitra.MyApplications)
 			mitraProtected.GET("/applications/:id", h.Mitra.GetApplication)
+			mitraProtected.POST("/applications/:id/cancel", h.Mitra.CancelApplication)
 
 			// Partnership (own)
 			mitraProtected.GET("/partnership", h.Partnership.GetByMitra)

@@ -31,8 +31,9 @@ type PartnershipApplication struct {
 }
 
 const (
-	ApplicationStatusPending  = "PENDING"
-	ApplicationStatusReviewed = "REVIEWED"
-	ApplicationStatusApproved = "APPROVED"
-	ApplicationStatusRejected = "REJECTED"
+	ApplicationStatusPending   = "PENDING"
+	ApplicationStatusReviewed  = "REVIEWED"
+	ApplicationStatusApproved  = "APPROVED"
+	ApplicationStatusRejected  = "REJECTED"
+	ApplicationStatusCancelled = "CANCELLED"
 )
