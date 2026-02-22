@@ -1,181 +1,205 @@
 <template>
-  <div class="invd-page">
+  <div class="id-page">
     <!-- Loading -->
-    <div v-if="loading" class="invd-loading">
-      <div class="invd-skel shimmer" style="height:200px;border-radius:16px"></div>
-      <div class="invd-skel shimmer" style="height:400px;border-radius:16px;margin-top:20px"></div>
+    <div v-if="loading" class="id-loading">
+      <div class="id-skel-hero shimmer"></div>
+      <div class="id-skel-row"><div class="id-skel-card shimmer"></div><div class="id-skel-card shimmer"></div></div>
     </div>
 
     <template v-else-if="inv">
-      <!-- Invoice Paper -->
-      <div class="invd-paper">
-        <!-- Header -->
-        <div class="invd-header">
-          <div class="invd-header-left">
-            <div class="invd-brand">
-              <div class="invd-brand-icon"><i class="ri-store-2-fill"></i></div>
-              <div>
-                <div class="invd-brand-name">BukaOutlet</div>
-                <div class="invd-brand-sub">Platform Kemitraan Indonesia</div>
-              </div>
-            </div>
+      <!-- Hero -->
+      <div class="id-hero">
+        <button class="id-back" @click="$router.push('/invoices')">
+          <i class="ri-arrow-left-line"></i>
+          Kembali
+        </button>
+        <div class="id-hero-content">
+          <div class="id-hero-icon">
+            <i class="ri-receipt-line"></i>
           </div>
-          <div class="invd-header-right">
-            <h1 class="invd-title">INVOICE</h1>
-            <div class="invd-inv-number">{{ inv.invoice_number }}</div>
-          </div>
-        </div>
-
-        <!-- Meta Bar -->
-        <div class="invd-meta-bar">
-          <div class="invd-meta-item">
-            <span class="invd-meta-label">Tanggal Invoice</span>
-            <span class="invd-meta-value">{{ formatDateFull(inv.created_at) }}</span>
-          </div>
-          <div class="invd-meta-item">
-            <span class="invd-meta-label">Tipe</span>
-            <span class="invd-meta-value"><span class="invd-type-badge" :class="'it-'+inv.type">{{ typeLabel(inv.type) }}</span></span>
-          </div>
-          <div class="invd-meta-item">
-            <span class="invd-meta-label">Status</span>
-            <span class="invd-meta-value">
-              <span class="invd-status-badge" :class="'is-'+inv.status">
-                <i :class="statusIcon(inv.status)"></i>
+          <div>
+            <div class="id-hero-badges">
+              <span class="id-badge" :class="'st-'+inv.status">
+                <span class="id-badge-dot"></span>
                 {{ statusLabel(inv.status) }}
               </span>
-            </span>
-          </div>
-          <div class="invd-meta-item" v-if="inv.expired_at && inv.status === 'PENDING'">
-            <span class="invd-meta-label">Jatuh Tempo</span>
-            <span class="invd-meta-value invd-due">{{ formatDateFull(inv.expired_at) }}</span>
-          </div>
-          <div class="invd-meta-item" v-if="inv.paid_at">
-            <span class="invd-meta-label">Tanggal Bayar</span>
-            <span class="invd-meta-value invd-paid-date">{{ formatDateFull(inv.paid_at) }}</span>
-          </div>
-        </div>
-
-        <!-- Billing Info -->
-        <div class="invd-billing">
-          <div class="invd-billing-section">
-            <h4 class="invd-billing-title">Penerbit Invoice</h4>
-            <p class="invd-billing-line invd-billing-company">BukaOutlet Indonesia</p>
-            <p class="invd-billing-line">Platform Kemitraan & Franchise</p>
-            <p class="invd-billing-line">support@bukaoutlet.id</p>
-          </div>
-          <div class="invd-billing-section">
-            <h4 class="invd-billing-title">Ditagihkan Kepada</h4>
-            <p class="invd-billing-line invd-billing-company">{{ auth.userName }}</p>
-            <p class="invd-billing-line">{{ auth.user?.email || '-' }}</p>
-            <p class="invd-billing-line">{{ auth.user?.phone || '-' }}</p>
-          </div>
-        </div>
-
-        <!-- Line Items Table -->
-        <div class="invd-table-section">
-          <table class="invd-table">
-            <thead>
-              <tr>
-                <th style="width:50%">Deskripsi</th>
-                <th style="width:15%;text-align:center">Qty</th>
-                <th style="width:35%;text-align:right">Jumlah</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>
-                  <div class="invd-item-name">{{ inv.description || typeLabel(inv.type) }}</div>
-                  <div class="invd-item-desc">
-                    Invoice {{ inv.invoice_number }} — {{ typeDesc(inv.type) }}
-                  </div>
-                </td>
-                <td style="text-align:center">1</td>
-                <td style="text-align:right" class="invd-item-amount">{{ fc(inv.amount) }}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <!-- Summary -->
-        <div class="invd-summary">
-          <div class="invd-summary-row">
-            <span>Subtotal</span>
-            <span>{{ fc(inv.amount) }}</span>
-          </div>
-          <div class="invd-summary-row">
-            <span>PPN (0%)</span>
-            <span>Rp0</span>
-          </div>
-          <div class="invd-summary-row invd-total-row">
-            <span>Total Tagihan</span>
-            <span>{{ fc(inv.amount) }}</span>
-          </div>
-        </div>
-
-        <!-- Payment Info -->
-        <div class="invd-payment-info" v-if="inv.midtrans_payment_type || inv.midtrans_transaction_id">
-          <h4 class="invd-payment-title">
-            <i class="ri-bank-card-line"></i>
-            Informasi Pembayaran
-          </h4>
-          <div class="invd-payment-grid">
-            <div class="invd-payment-item" v-if="inv.midtrans_payment_type">
-              <span class="invd-payment-label">Metode Pembayaran</span>
-              <span class="invd-payment-value">{{ paymentMethodLabel(inv.midtrans_payment_type) }}</span>
+              <span class="id-type-badge" :class="'tp-'+inv.type">{{ typeLabel(inv.type) }}</span>
             </div>
-            <div class="invd-payment-item" v-if="inv.midtrans_transaction_id">
-              <span class="invd-payment-label">ID Transaksi</span>
-              <span class="invd-payment-value invd-mono">{{ inv.midtrans_transaction_id }}</span>
-            </div>
-            <div class="invd-payment-item" v-if="inv.midtrans_order_id">
-              <span class="invd-payment-label">Order ID</span>
-              <span class="invd-payment-value invd-mono">{{ inv.midtrans_order_id }}</span>
-            </div>
-            <div class="invd-payment-item" v-if="inv.midtrans_transaction_status">
-              <span class="invd-payment-label">Status Transaksi</span>
-              <span class="invd-payment-value">{{ inv.midtrans_transaction_status }}</span>
-            </div>
+            <h1 class="id-hero-title">{{ inv.invoice_number }}</h1>
+            <p class="id-hero-sub">
+              <i class="ri-calendar-line"></i>
+              Diterbitkan {{ formatDate(inv.created_at) }}
+            </p>
           </div>
         </div>
-
-        <!-- Proof of Payment -->
-        <div class="invd-proof" v-if="inv.proof_url">
-          <h4 class="invd-proof-title">
-            <i class="ri-image-line"></i>
-            Bukti Pembayaran
-          </h4>
-          <a :href="inv.proof_url" target="_blank" class="invd-proof-link">
-            <img :src="inv.proof_url" alt="Bukti Pembayaran" class="invd-proof-img" />
-          </a>
-        </div>
-
-        <!-- Footer -->
-        <div class="invd-footer">
-          <div class="invd-footer-note">
-            <i class="ri-information-line"></i>
-            <span>Invoice ini dibuat secara otomatis oleh sistem BukaOutlet dan berlaku sebagai bukti tagihan yang sah.</span>
+        <div class="id-stats">
+          <div class="id-stat">
+            <span class="id-stat-label">Total Tagihan</span>
+            <span class="id-stat-val">{{ fc(inv.amount) }}</span>
+          </div>
+          <div class="id-stat" v-if="inv.paid_at">
+            <span class="id-stat-label">Tanggal Bayar</span>
+            <span class="id-stat-val">{{ formatDate(inv.paid_at) }}</span>
+          </div>
+          <div class="id-stat" v-else-if="inv.expired_at && inv.status === 'PENDING'">
+            <span class="id-stat-label">Jatuh Tempo</span>
+            <span class="id-stat-val" style="color:#fbbf24">{{ formatDate(inv.expired_at) }}</span>
+          </div>
+          <div class="id-stat" v-if="inv.midtrans_payment_type">
+            <span class="id-stat-label">Metode Pembayaran</span>
+            <span class="id-stat-val">{{ paymentMethodLabel(inv.midtrans_payment_type) }}</span>
           </div>
         </div>
       </div>
 
-      <!-- Action Buttons -->
-      <div class="invd-actions">
-        <a v-if="inv.midtrans_redirect_url && inv.status === 'PENDING'" :href="inv.midtrans_redirect_url" target="_blank" class="invd-action-btn invd-btn-pay">
-          <i class="ri-bank-card-line"></i>
-          Bayar Sekarang
-        </a>
-        <router-link to="/invoices" class="invd-action-btn invd-btn-ghost">
-          <i class="ri-arrow-left-s-line"></i>
-          Kembali ke Daftar Invoice
-        </router-link>
+      <!-- Content -->
+      <div class="id-content">
+        <!-- Left: Invoice Detail -->
+        <div class="id-main">
+          <!-- Billing Info -->
+          <div class="id-section">
+            <h3 class="id-section-title">
+              <i class="ri-user-line"></i>
+              Informasi Penagihan
+            </h3>
+            <div class="id-billing-grid">
+              <div class="id-billing-card">
+                <div class="id-billing-dot" style="background:#6366f1"></div>
+                <div>
+                  <div class="id-billing-heading">Penerbit</div>
+                  <div class="id-billing-name">BukaOutlet Indonesia</div>
+                  <div class="id-billing-sub">Platform Kemitraan & Franchise</div>
+                  <div class="id-billing-sub">support@bukaoutlet.id</div>
+                </div>
+              </div>
+              <div class="id-billing-card">
+                <div class="id-billing-dot" style="background:#f59e0b"></div>
+                <div>
+                  <div class="id-billing-heading">Ditagihkan Kepada</div>
+                  <div class="id-billing-name">{{ auth.userName }}</div>
+                  <div class="id-billing-sub">{{ auth.user?.email || '-' }}</div>
+                  <div class="id-billing-sub">{{ auth.user?.phone || '-' }}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Line Items -->
+          <div class="id-section">
+            <h3 class="id-section-title">
+              <i class="ri-file-list-3-line"></i>
+              Rincian Tagihan
+            </h3>
+            <div class="id-table-wrap">
+              <table class="id-table">
+                <thead>
+                  <tr>
+                    <th>Deskripsi</th>
+                    <th style="text-align:center;width:80px">Qty</th>
+                    <th style="text-align:right;width:160px">Jumlah</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>
+                      <div class="id-item-title">{{ inv.description || typeLabel(inv.type) }}</div>
+                      <div class="id-item-sub">{{ typeDesc(inv.type) }}</div>
+                    </td>
+                    <td style="text-align:center;color:#64748b">1</td>
+                    <td style="text-align:right" class="id-item-amount">{{ fc(inv.amount) }}</td>
+                  </tr>
+                </tbody>
+                <tfoot>
+                  <tr class="id-total-row">
+                    <td colspan="2" style="text-align:right">Total Tagihan</td>
+                    <td style="text-align:right">{{ fc(inv.amount) }}</td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </div>
+
+          <!-- Transaction Details -->
+          <div class="id-section" v-if="inv.midtrans_transaction_id || inv.midtrans_order_id">
+            <h3 class="id-section-title">
+              <i class="ri-exchange-funds-line"></i>
+              Detail Transaksi
+            </h3>
+            <div class="id-info-grid">
+              <div class="id-info-row" v-if="inv.midtrans_order_id">
+                <span class="id-info-label">Order ID</span>
+                <span class="id-info-value id-mono">{{ inv.midtrans_order_id }}</span>
+              </div>
+              <div class="id-info-row" v-if="inv.midtrans_transaction_id">
+                <span class="id-info-label">ID Transaksi</span>
+                <span class="id-info-value id-mono">{{ inv.midtrans_transaction_id }}</span>
+              </div>
+              <div class="id-info-row" v-if="inv.midtrans_payment_type">
+                <span class="id-info-label">Metode Pembayaran</span>
+                <span class="id-info-value">{{ paymentMethodLabel(inv.midtrans_payment_type) }}</span>
+              </div>
+              <div class="id-info-row" v-if="inv.midtrans_transaction_status">
+                <span class="id-info-label">Status Transaksi</span>
+                <span class="id-info-value">{{ inv.midtrans_transaction_status }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Sidebar -->
+        <div class="id-sidebar">
+          <!-- Pay CTA -->
+          <div class="id-pay-card" v-if="inv.midtrans_redirect_url && inv.status === 'PENDING'">
+            <div class="id-pay-icon-row">
+              <div class="id-pay-icon"><i class="ri-secure-payment-line"></i></div>
+              <div>
+                <div class="id-pay-heading">Selesaikan Pembayaran</div>
+                <p class="id-pay-desc">Bayar sebelum jatuh tempo untuk mengaktifkan kemitraan Anda.</p>
+              </div>
+            </div>
+            <a :href="inv.midtrans_redirect_url" target="_blank" class="id-pay-btn">
+              <i class="ri-bank-card-line"></i>
+              Bayar Sekarang
+            </a>
+          </div>
+
+          <!-- Proof -->
+          <div class="id-sidebar-card" v-if="inv.proof_url">
+            <h3 class="id-sidebar-title">
+              <i class="ri-image-line"></i>
+              Bukti Pembayaran
+            </h3>
+            <a :href="inv.proof_url" target="_blank" class="id-proof-btn">
+              <i class="ri-external-link-line"></i>
+              Lihat Bukti
+            </a>
+          </div>
+
+          <!-- Invoice Note -->
+          <div class="id-sidebar-card">
+            <h3 class="id-sidebar-title">
+              <i class="ri-information-line"></i>
+              Catatan
+            </h3>
+            <p class="id-sidebar-note">Invoice ini dibuat secara otomatis oleh sistem BukaOutlet dan berlaku sebagai bukti tagihan yang sah.</p>
+          </div>
+
+          <!-- Quick Actions -->
+          <div class="id-quick-actions">
+            <router-link to="/invoices" class="id-action-btn">
+              <i class="ri-arrow-left-s-line"></i>
+              Kembali ke Daftar
+            </router-link>
+          </div>
+        </div>
       </div>
     </template>
 
     <!-- Not Found -->
-    <div v-else class="invd-not-found">
-      <div class="invd-empty-circle"><i class="ri-file-text-line" style="font-size:32px;color:#94a3b8"></i></div>
+    <div v-else class="id-empty">
+      <div class="id-empty-icon"><i class="ri-file-text-line"></i></div>
       <p>Invoice tidak ditemukan</p>
-      <router-link to="/invoices" class="invd-back-link">Kembali ke Daftar</router-link>
+      <router-link to="/invoices" class="id-empty-link">Kembali ke Daftar</router-link>
     </div>
   </div>
 </template>
@@ -194,20 +218,19 @@ const inv = ref(null)
 const loading = ref(true)
 
 function fc(v) { return v ? new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(v) : 'Rp0' }
-function formatDateFull(d) { return d ? new Date(d).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : '-' }
+function formatDate(d) { return d ? new Date(d).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : '-' }
 function typeLabel(t) { return { DP: 'Down Payment', CICILAN: 'Cicilan', PELUNASAN: 'Pelunasan', INVOICE: 'Invoice' }[t] || t }
 function typeDesc(t) {
   return {
-    DP: 'Pembayaran uang muka (Down Payment) untuk kemitraan',
-    CICILAN: 'Pembayaran cicilan sesuai jadwal yang telah disepakati',
-    PELUNASAN: 'Pembayaran pelunasan untuk menyelesaikan tagihan kemitraan',
-    INVOICE: 'Tagihan pembayaran kemitraan'
-  }[t] || 'Tagihan pembayaran'
+    DP: 'Pembayaran uang muka (Down Payment) untuk proses aktivasi kemitraan outlet',
+    CICILAN: 'Pembayaran cicilan sesuai jadwal yang telah disepakati bersama',
+    PELUNASAN: 'Pembayaran pelunasan akhir untuk menyelesaikan seluruh tagihan kemitraan',
+    INVOICE: 'Tagihan pembayaran terkait kemitraan outlet'
+  }[t] || 'Tagihan pembayaran kemitraan'
 }
 function statusLabel(s) { return { PAID: 'Lunas', PENDING: 'Menunggu Pembayaran', EXPIRED: 'Kadaluarsa', FAILED: 'Gagal', CANCELED: 'Dibatalkan' }[s] || s }
-function statusIcon(s) { return { PAID: 'ri-checkbox-circle-fill', PENDING: 'ri-time-fill', EXPIRED: 'ri-alarm-warning-fill', FAILED: 'ri-close-circle-fill', CANCELED: 'ri-forbid-fill' }[s] || 'ri-question-fill' }
 function paymentMethodLabel(m) {
-  const map = { bank_transfer: 'Transfer Bank', credit_card: 'Kartu Kredit', gopay: 'GoPay', shopeepay: 'ShopeePay', qris: 'QRIS', cstore: 'Minimarket', echannel: 'Mandiri Bill', bca_va: 'BCA Virtual Account', bni_va: 'BNI Virtual Account', bri_va: 'BRI Virtual Account', permata_va: 'Permata VA' }
+  const map = { bank_transfer: 'Transfer Bank', credit_card: 'Kartu Kredit', gopay: 'GoPay', shopeepay: 'ShopeePay', qris: 'QRIS', cstore: 'Minimarket', echannel: 'Mandiri Bill', bca_va: 'BCA VA', bni_va: 'BNI VA', bri_va: 'BRI VA', permata_va: 'Permata VA' }
   return map[m] || m
 }
 
@@ -224,115 +247,119 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-/* ═══ Page ═══ */
-.invd-page { max-width: 800px; margin: 0 auto; }
-.invd-loading { display: flex; flex-direction: column; gap: 20px; }
-.invd-skel { background: #e8ecf1; border-radius: 16px; }
+/* ═══ Hero — same pattern as ApplicationDetail ═══ */
+.id-hero { background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%); border-radius: 16px; padding: 28px 36px 24px; margin-bottom: 24px; box-shadow: 0 4px 24px rgba(15,12,41,.2); }
+.id-back { display: inline-flex; align-items: center; gap: 5px; font-size: .78rem; font-weight: 600; color: rgba(255,255,255,.45); background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.1); border-radius: 8px; padding: 6px 14px; cursor: pointer; margin-bottom: 18px; transition: all .15s; backdrop-filter: blur(4px); }
+.id-back:hover { color: #fff; border-color: rgba(255,255,255,.25); background: rgba(255,255,255,.1); }
+
+.id-hero-content { display: flex; align-items: center; gap: 16px; margin-bottom: 20px; }
+.id-hero-icon { width: 56px; height: 56px; border-radius: 14px; flex-shrink: 0; border: 2px solid rgba(255,255,255,.12); background: rgba(255,255,255,.06); display: flex; align-items: center; justify-content: center; font-size: 24px; color: rgba(255,255,255,.5); }
+.id-hero-badges { display: flex; gap: 8px; margin-bottom: 6px; flex-wrap: wrap; }
+.id-hero-title { font-size: 1.5rem; font-weight: 800; color: #fff; margin: 0; }
+.id-hero-sub { font-size: .82rem; color: rgba(255,255,255,.4); margin: 6px 0 0; display: flex; align-items: center; gap: 5px; }
+
+.id-badge { font-size: .68rem; font-weight: 700; padding: 4px 12px; border-radius: 6px; text-transform: uppercase; letter-spacing: .03em; display: inline-flex; align-items: center; gap: 5px; }
+.id-badge-dot { width: 6px; height: 6px; border-radius: 50%; }
+.st-PAID { background: rgba(34,197,94,.15); color: #4ade80; }
+.st-PAID .id-badge-dot { background: #22c55e; }
+.st-PENDING { background: rgba(245,158,11,.15); color: #fbbf24; }
+.st-PENDING .id-badge-dot { background: #f59e0b; }
+.st-EXPIRED, .st-FAILED, .st-CANCELED { background: rgba(148,163,184,.15); color: #94a3b8; }
+.st-EXPIRED .id-badge-dot, .st-FAILED .id-badge-dot, .st-CANCELED .id-badge-dot { background: #94a3b8; }
+
+.id-type-badge { font-size: .68rem; font-weight: 700; padding: 4px 10px; border-radius: 6px; text-transform: uppercase; letter-spacing: .03em; }
+.tp-DP { background: rgba(56,189,248,.12); color: #38bdf8; }
+.tp-CICILAN { background: rgba(167,139,250,.12); color: #a78bfa; }
+.tp-PELUNASAN { background: rgba(52,211,153,.12); color: #34d399; }
+.tp-INVOICE { background: rgba(251,191,36,.12); color: #fbbf24; }
+
+.id-stats { display: flex; gap: 32px; flex-wrap: wrap; padding-top: 18px; border-top: 1px solid rgba(255,255,255,.08); }
+.id-stat { display: flex; flex-direction: column; gap: 2px; }
+.id-stat-label { font-size: .68rem; color: rgba(255,255,255,.35); text-transform: uppercase; letter-spacing: .05em; }
+.id-stat-val { font-size: .95rem; font-weight: 800; color: #fff; }
+
+/* ═══ Content Grid — same as ApplicationDetail ═══ */
+.id-content { display: grid; grid-template-columns: 1fr 340px; gap: 24px; align-items: start; }
+.id-main { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+.id-sidebar { display: flex; flex-direction: column; gap: 16px; }
+
+/* ═══ Section Cards ═══ */
+.id-section { background: #fff; border-radius: 14px; border: 1px solid #e8ecf1; padding: 24px 28px; }
+.id-section-title { font-size: .88rem; font-weight: 700; color: #0f172a; margin: 0 0 18px; display: flex; align-items: center; gap: 8px; }
+.id-section-title i { color: #6366f1; font-size: 16px; }
+
+/* Billing */
+.id-billing-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.id-billing-card { display: flex; gap: 12px; padding: 16px; background: #f8fafc; border-radius: 12px; border: 1px solid #f1f5f9; }
+.id-billing-dot { width: 4px; border-radius: 2px; flex-shrink: 0; }
+.id-billing-heading { font-size: .66rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 6px; }
+.id-billing-name { font-size: .88rem; font-weight: 700; color: #0f172a; margin-bottom: 2px; }
+.id-billing-sub { font-size: .78rem; color: #64748b; line-height: 1.5; }
+
+/* Table */
+.id-table-wrap { overflow-x: auto; }
+.id-table { width: 100%; border-collapse: collapse; }
+.id-table thead { background: #f8fafc; }
+.id-table th { padding: 11px 16px; font-size: .68rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: .06em; text-align: left; border: 1px solid #e8ecf1; border-left: none; border-right: none; }
+.id-table td { padding: 18px 16px; font-size: .85rem; color: #1e293b; border-bottom: 1px solid #f1f5f9; }
+.id-item-title { font-weight: 700; color: #0f172a; margin-bottom: 4px; }
+.id-item-sub { font-size: .75rem; color: #94a3b8; line-height: 1.5; max-width: 400px; }
+.id-item-amount { font-weight: 800; color: #0f172a; white-space: nowrap; }
+
+/* Total Row */
+.id-total-row td { padding: 14px 16px; font-size: .95rem; font-weight: 800; color: #0f172a; border-top: 2px solid #0f172a; border-bottom: none; }
+
+/* Transaction Info */
+.id-info-grid { display: flex; flex-direction: column; gap: 0; }
+.id-info-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #f1f5f9; }
+.id-info-row:last-child { border-bottom: none; }
+.id-info-label { font-size: .78rem; color: #94a3b8; font-weight: 500; }
+.id-info-value { font-size: .82rem; color: #1e293b; font-weight: 600; }
+.id-mono { font-family: 'JetBrains Mono', 'Fira Code', monospace; font-size: .75rem; color: #475569; }
+
+/* ═══ Sidebar Cards ═══ */
+.id-pay-card { background: linear-gradient(135deg, #312e81, #4338ca); border-radius: 14px; padding: 22px; color: #fff; }
+.id-pay-icon-row { display: flex; gap: 12px; margin-bottom: 16px; }
+.id-pay-icon { width: 40px; height: 40px; border-radius: 10px; background: rgba(255,255,255,.1); display: flex; align-items: center; justify-content: center; font-size: 20px; color: rgba(255,255,255,.7); flex-shrink: 0; }
+.id-pay-heading { font-size: .88rem; font-weight: 700; }
+.id-pay-desc { font-size: .75rem; color: rgba(255,255,255,.5); margin: 4px 0 0; line-height: 1.5; }
+.id-pay-btn { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 12px; border-radius: 10px; font-size: .85rem; font-weight: 700; color: #312e81; background: #fff; text-decoration: none; box-shadow: 0 4px 14px rgba(0,0,0,.12); transition: all .2s; }
+.id-pay-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(0,0,0,.18); }
+
+.id-sidebar-card { background: #fff; border-radius: 14px; border: 1px solid #e8ecf1; padding: 22px; }
+.id-sidebar-title { font-size: .85rem; font-weight: 700; color: #0f172a; margin: 0 0 12px; display: flex; align-items: center; gap: 6px; }
+.id-sidebar-title i { color: #6366f1; }
+.id-sidebar-note { font-size: .78rem; color: #64748b; line-height: 1.6; margin: 0; }
+
+.id-proof-btn { display: inline-flex; align-items: center; gap: 6px; font-size: .82rem; font-weight: 600; color: #6366f1; text-decoration: none; padding: 10px 18px; border-radius: 10px; background: #eef2ff; transition: all .15s; }
+.id-proof-btn:hover { background: #e0e7ff; }
+
+/* Quick Actions */
+.id-quick-actions { display: flex; flex-direction: column; gap: 8px; }
+.id-action-btn { display: flex; align-items: center; gap: 6px; padding: 12px 18px; border-radius: 10px; font-size: .82rem; font-weight: 600; color: #475569; text-decoration: none; background: #fff; border: 1px solid #e8ecf1; transition: all .15s; }
+.id-action-btn:hover { background: #f8fafc; border-color: #cbd5e1; }
+
+/* ═══ Loading & Empty ═══ */
+.id-loading { display: flex; flex-direction: column; gap: 0; }
+.id-skel-hero { height: 190px; border-radius: 16px; margin-bottom: 24px; }
+.id-skel-row { display: grid; grid-template-columns: 1fr 340px; gap: 24px; }
+.id-skel-card { height: 300px; border-radius: 14px; }
 .shimmer { background: linear-gradient(90deg, #e8ecf1 25%, #f1f5f9 50%, #e8ecf1 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; }
 @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
 
-/* ═══ Paper ═══ */
-.invd-paper { background: #fff; border-radius: 20px; border: 1px solid #e8ecf1; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,.04); }
+.id-empty { text-align: center; padding: 80px 20px; background: #fff; border-radius: 14px; border: 1px solid #e8ecf1; }
+.id-empty-icon { width: 72px; height: 72px; border-radius: 50%; background: linear-gradient(135deg, #f1f5f9, #e2e8f0); display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; font-size: 28px; color: #94a3b8; }
+.id-empty p { color: #94a3b8; font-size: .85rem; margin: 0 0 16px; }
+.id-empty-link { font-size: .82rem; font-weight: 600; color: #6366f1; text-decoration: none; }
+.id-empty-link:hover { text-decoration: underline; }
 
-/* ═══ Header ═══ */
-.invd-header { display: flex; justify-content: space-between; align-items: flex-start; padding: 36px 36px 28px; border-bottom: 2px solid #f1f5f9; }
-.invd-brand { display: flex; align-items: center; gap: 12px; }
-.invd-brand-icon { width: 44px; height: 44px; border-radius: 12px; background: linear-gradient(135deg, #6366f1, #8b5cf6); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 22px; }
-.invd-brand-name { font-size: 1.1rem; font-weight: 800; color: #0f172a; }
-.invd-brand-sub { font-size: .72rem; color: #94a3b8; margin-top: 1px; }
-.invd-header-right { text-align: right; }
-.invd-title { font-size: 1.8rem; font-weight: 900; color: #6366f1; margin: 0; letter-spacing: .04em; }
-.invd-inv-number { font-size: .85rem; font-weight: 700; color: #64748b; margin-top: 4px; font-family: 'JetBrains Mono', 'Fira Code', monospace; }
-
-/* ═══ Meta Bar ═══ */
-.invd-meta-bar { display: flex; flex-wrap: wrap; gap: 6px 20px; padding: 20px 36px; background: #f8fafc; border-bottom: 1px solid #f1f5f9; }
-.invd-meta-item { display: flex; flex-direction: column; gap: 2px; min-width: 140px; }
-.invd-meta-label { font-size: .68rem; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: .06em; }
-.invd-meta-value { font-size: .82rem; font-weight: 600; color: #1e293b; }
-.invd-due { color: #d97706; }
-.invd-paid-date { color: #16a34a; }
-
-.invd-type-badge { font-size: .68rem; font-weight: 700; padding: 3px 8px; border-radius: 5px; text-transform: uppercase; letter-spacing: .03em; }
-.it-DP { background: #e0f2fe; color: #0284c7; }
-.it-CICILAN { background: #ede9fe; color: #7c3aed; }
-.it-PELUNASAN { background: #dcfce7; color: #16a34a; }
-.it-INVOICE { background: #fef3c7; color: #d97706; }
-
-.invd-status-badge { display: inline-flex; align-items: center; gap: 4px; font-size: .75rem; font-weight: 700; padding: 4px 10px; border-radius: 6px; }
-.is-PAID { background: #dcfce7; color: #16a34a; }
-.is-PENDING { background: #fef3c7; color: #d97706; }
-.is-EXPIRED, .is-FAILED, .is-CANCELED { background: #f1f5f9; color: #64748b; }
-
-/* ═══ Billing ═══ */
-.invd-billing { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; padding: 28px 36px; }
-.invd-billing-title { font-size: .7rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: .06em; margin: 0 0 10px; }
-.invd-billing-line { font-size: .82rem; color: #475569; margin: 0 0 3px; line-height: 1.5; }
-.invd-billing-company { font-weight: 700; color: #0f172a; font-size: .88rem; }
-
-/* ═══ Table ═══ */
-.invd-table-section { padding: 0 36px; }
-.invd-table { width: 100%; border-collapse: collapse; }
-.invd-table thead { background: #f8fafc; }
-.invd-table th { padding: 12px 16px; font-size: .7rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: .06em; text-align: left; border-top: 1px solid #e8ecf1; border-bottom: 1px solid #e8ecf1; }
-.invd-table td { padding: 18px 16px; font-size: .85rem; color: #1e293b; border-bottom: 1px solid #f1f5f9; }
-.invd-item-name { font-weight: 700; color: #0f172a; margin-bottom: 3px; }
-.invd-item-desc { font-size: .78rem; color: #94a3b8; line-height: 1.4; }
-.invd-item-amount { font-weight: 800; color: #0f172a; white-space: nowrap; }
-
-/* ═══ Summary ═══ */
-.invd-summary { margin: 0 36px 28px; margin-left: auto; max-width: 320px; padding-top: 4px; }
-.invd-summary-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; font-size: .85rem; color: #64748b; }
-.invd-total-row { border-top: 2px solid #0f172a; margin-top: 4px; padding-top: 12px; font-size: 1.05rem; font-weight: 800; color: #0f172a; }
-
-/* ═══ Payment Info ═══ */
-.invd-payment-info { margin: 0 36px 28px; padding: 20px; background: #f8fafc; border-radius: 12px; border: 1px solid #e8ecf1; }
-.invd-payment-title { font-size: .82rem; font-weight: 700; color: #0f172a; margin: 0 0 14px; display: flex; align-items: center; gap: 6px; }
-.invd-payment-title i { color: #6366f1; }
-.invd-payment-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-.invd-payment-item { display: flex; flex-direction: column; gap: 2px; }
-.invd-payment-label { font-size: .7rem; color: #94a3b8; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
-.invd-payment-value { font-size: .82rem; color: #1e293b; font-weight: 600; }
-.invd-mono { font-family: 'JetBrains Mono', 'Fira Code', monospace; font-size: .78rem; }
-
-/* ═══ Proof ═══ */
-.invd-proof { margin: 0 36px 28px; }
-.invd-proof-title { font-size: .82rem; font-weight: 700; color: #0f172a; margin: 0 0 12px; display: flex; align-items: center; gap: 6px; }
-.invd-proof-title i { color: #6366f1; }
-.invd-proof-link { display: block; border-radius: 12px; overflow: hidden; border: 1px solid #e8ecf1; transition: box-shadow .2s; }
-.invd-proof-link:hover { box-shadow: 0 4px 14px rgba(0,0,0,.08); }
-.invd-proof-img { width: 100%; max-height: 300px; object-fit: contain; background: #f8fafc; display: block; }
-
-/* ═══ Footer ═══ */
-.invd-footer { padding: 20px 36px; background: #f8fafc; border-top: 1px solid #f1f5f9; }
-.invd-footer-note { display: flex; align-items: flex-start; gap: 8px; font-size: .75rem; color: #94a3b8; line-height: 1.5; }
-.invd-footer-note i { flex-shrink: 0; margin-top: 1px; color: #cbd5e1; }
-
-/* ═══ Actions ═══ */
-.invd-actions { display: flex; gap: 10px; margin-top: 20px; justify-content: center; }
-.invd-action-btn { display: inline-flex; align-items: center; gap: 6px; padding: 12px 24px; border-radius: 12px; font-size: .85rem; font-weight: 700; text-decoration: none; transition: all .2s; }
-.invd-btn-pay { background: linear-gradient(135deg, #6366f1, #8b5cf6); color: #fff; box-shadow: 0 2px 12px rgba(99,102,241,.3); }
-.invd-btn-pay:hover { box-shadow: 0 4px 18px rgba(99,102,241,.4); transform: translateY(-1px); }
-.invd-btn-ghost { background: #fff; color: #475569; border: 1px solid #e8ecf1; }
-.invd-btn-ghost:hover { background: #f8fafc; }
-
-/* ═══ Not Found ═══ */
-.invd-not-found { text-align: center; padding: 80px 20px; background: #fff; border-radius: 16px; border: 1px solid #e8ecf1; }
-.invd-empty-circle { width: 72px; height: 72px; border-radius: 50%; background: linear-gradient(135deg, #f1f5f9, #e2e8f0); display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; }
-.invd-not-found p { color: #94a3b8; font-size: .88rem; margin: 0 0 16px; }
-.invd-back-link { font-size: .82rem; font-weight: 600; color: #6366f1; text-decoration: none; }
-.invd-back-link:hover { text-decoration: underline; }
-
-@media (max-width: 768px) {
-  .invd-header { flex-direction: column; gap: 16px; padding: 24px 20px 20px; }
-  .invd-header-right { text-align: left; }
-  .invd-meta-bar { padding: 16px 20px; }
-  .invd-billing { grid-template-columns: 1fr; gap: 20px; padding: 20px; }
-  .invd-table-section { padding: 0 12px; overflow-x: auto; }
-  .invd-summary { margin: 0 20px 20px; max-width: 100%; }
-  .invd-payment-info { margin: 0 20px 20px; }
-  .invd-payment-grid { grid-template-columns: 1fr; }
-  .invd-proof { margin: 0 20px 20px; }
-  .invd-footer { padding: 16px 20px; }
-  .invd-actions { flex-direction: column; }
+/* ═══ Responsive ═══ */
+@media (max-width: 900px) {
+  .id-hero { padding: 24px 20px 18px; }
+  .id-content { grid-template-columns: 1fr; }
+  .id-skel-row { grid-template-columns: 1fr; }
+  .id-billing-grid { grid-template-columns: 1fr; }
+  .id-section { padding: 20px; }
+  .id-summary { width: 100%; }
 }
 </style>
