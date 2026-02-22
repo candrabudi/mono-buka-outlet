@@ -255,6 +255,12 @@ func (h *MitraHandler) ReviewApplication(c *gin.Context) {
 		return
 	}
 
+	// Block changes on final statuses
+	if app.Status == entity.ApplicationStatusRejected || app.Status == entity.ApplicationStatusCancelled || app.Status == entity.ApplicationStatusApproved {
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "error": "Pengajuan dengan status " + app.Status + " tidak dapat diubah lagi"})
+		return
+	}
+
 	// Update status
 	if err := h.appRepo.UpdateStatus(c.Request.Context(), appID, req.Status, req.AdminNotes, adminID); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": "Gagal memperbarui pengajuan"})
