@@ -144,23 +144,62 @@
               </div>
             </div>
           </div>
+
+          <!-- Supported Payment Methods Info -->
+          <div class="id-section" v-if="inv.status === 'PENDING'">
+            <h3 class="id-section-title">
+              <i class="ri-bank-card-2-line"></i>
+              Metode Pembayaran yang Didukung
+            </h3>
+            <div class="id-payment-methods">
+              <div class="id-pm-group">
+                <div class="id-pm-label">💳 Kartu Kredit / Debit</div>
+                <div class="id-pm-desc">Visa, Mastercard, JCB, Amex — dengan 3D Secure</div>
+              </div>
+              <div class="id-pm-group">
+                <div class="id-pm-label">🏦 Transfer Bank (Virtual Account)</div>
+                <div class="id-pm-desc">BCA, BNI, BRI, Mandiri, Permata</div>
+              </div>
+              <div class="id-pm-group">
+                <div class="id-pm-label">📱 E-Wallet & QRIS</div>
+                <div class="id-pm-desc">GoPay, ShopeePay, DANA, QRIS</div>
+              </div>
+              <div class="id-pm-group">
+                <div class="id-pm-label">🛒 PayLater & Minimarket</div>
+                <div class="id-pm-desc">Kredivo, Akulaku, Indomaret, Alfamart</div>
+              </div>
+            </div>
+          </div>
         </div>
 
         <!-- Right: Sidebar -->
         <div class="id-sidebar">
-          <!-- Pay CTA -->
-          <div class="id-pay-card" v-if="inv.midtrans_redirect_url && inv.status === 'PENDING'">
+          <!-- Pay CTA — Snap Popup -->
+          <div class="id-pay-card" v-if="inv.midtrans_snap_token && inv.status === 'PENDING'">
             <div class="id-pay-icon-row">
               <div class="id-pay-icon"><i class="ri-secure-payment-line"></i></div>
               <div>
                 <div class="id-pay-heading">Selesaikan Pembayaran</div>
-                <p class="id-pay-desc">Bayar sebelum jatuh tempo untuk mengaktifkan kemitraan Anda.</p>
+                <p class="id-pay-desc">Pilih metode pembayaran favorit Anda — Credit Card, PayLater, Transfer Bank, E-Wallet, QRIS, dan lainnya.</p>
               </div>
             </div>
-            <a :href="inv.midtrans_redirect_url" target="_blank" class="id-pay-btn">
-              <i class="ri-bank-card-line"></i>
-              Bayar Sekarang
+            <button @click="openSnapPopup" class="id-pay-btn" :disabled="snapLoading">
+              <i class="ri-bank-card-line" v-if="!snapLoading"></i>
+              <span v-if="snapLoading" class="id-pay-spinner"></span>
+              {{ snapLoading ? 'Memuat...' : 'Bayar Sekarang' }}
+            </button>
+            <!-- Fallback link -->
+            <a v-if="inv.midtrans_redirect_url" :href="inv.midtrans_redirect_url" target="_blank" class="id-fallback-link">
+              <i class="ri-external-link-line"></i>
+              Atau buka halaman pembayaran
             </a>
+          </div>
+
+          <!-- Success notice -->
+          <div class="id-success-card" v-if="paymentSuccess">
+            <div class="id-success-icon"><i class="ri-checkbox-circle-fill"></i></div>
+            <div class="id-success-heading">Pembayaran Berhasil!</div>
+            <p class="id-success-desc">Terima kasih, pembayaran Anda sedang diproses. Status akan diperbarui dalam beberapa saat.</p>
           </div>
 
           <!-- Proof -->
@@ -207,7 +246,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
-import { invoiceApi } from '../services/api'
+import { invoiceApi, midtransApi } from '../services/api'
 import { useToastStore } from '../stores/toast'
 import { useAuthStore } from '../stores/auth'
 
@@ -216,6 +255,9 @@ const toast = useToastStore()
 const auth = useAuthStore()
 const inv = ref(null)
 const loading = ref(true)
+const snapLoading = ref(false)
+const paymentSuccess = ref(false)
+let snapLoaded = false
 
 function fc(v) { return v ? new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(v) : 'Rp0' }
 function formatDate(d) { return d ? new Date(d).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : '-' }
@@ -230,14 +272,121 @@ function typeDesc(t) {
 }
 function statusLabel(s) { return { PAID: 'Lunas', PENDING: 'Menunggu Pembayaran', EXPIRED: 'Kadaluarsa', FAILED: 'Gagal', CANCELED: 'Dibatalkan' }[s] || s }
 function paymentMethodLabel(m) {
-  const map = { bank_transfer: 'Transfer Bank', credit_card: 'Kartu Kredit', gopay: 'GoPay', shopeepay: 'ShopeePay', qris: 'QRIS', cstore: 'Minimarket', echannel: 'Mandiri Bill', bca_va: 'BCA VA', bni_va: 'BNI VA', bri_va: 'BRI VA', permata_va: 'Permata VA' }
+  const map = {
+    bank_transfer: 'Transfer Bank', credit_card: 'Kartu Kredit', gopay: 'GoPay',
+    shopeepay: 'ShopeePay', qris: 'QRIS', cstore: 'Minimarket', echannel: 'Mandiri Bill',
+    bca_va: 'BCA VA', bni_va: 'BNI VA', bri_va: 'BRI VA', permata_va: 'Permata VA',
+    dana: 'DANA', kredivo: 'Kredivo', akulaku: 'Akulaku'
+  }
   return map[m] || m
+}
+
+// Load Midtrans Snap.js dynamically
+async function loadSnapJS() {
+  if (snapLoaded && window.snap) return true
+
+  try {
+    const { data } = await midtransApi.getClientKey()
+    const clientKey = data.client_key
+    const snapUrl = data.snap_url
+
+    if (!clientKey || !snapUrl) {
+      console.warn('Midtrans client key or snap URL missing')
+      return false
+    }
+
+    return new Promise((resolve) => {
+      // Check if script already exists
+      const existing = document.querySelector('script[data-midtrans-snap]')
+      if (existing) {
+        snapLoaded = true
+        resolve(true)
+        return
+      }
+
+      const script = document.createElement('script')
+      script.src = snapUrl
+      script.setAttribute('data-client-key', clientKey)
+      script.setAttribute('data-midtrans-snap', 'true')
+      script.onload = () => {
+        snapLoaded = true
+        resolve(true)
+      }
+      script.onerror = () => {
+        console.error('Failed to load Midtrans Snap.js')
+        resolve(false)
+      }
+      document.head.appendChild(script)
+    })
+  } catch (err) {
+    console.error('Failed to get Midtrans client key:', err)
+    return false
+  }
+}
+
+// Open Midtrans Snap popup
+async function openSnapPopup() {
+  if (!inv.value?.midtrans_snap_token) {
+    toast.error('Token pembayaran tidak tersedia')
+    return
+  }
+
+  snapLoading.value = true
+
+  const loaded = await loadSnapJS()
+  if (!loaded || !window.snap) {
+    snapLoading.value = false
+    // Fallback: open redirect URL
+    if (inv.value.midtrans_redirect_url) {
+      window.open(inv.value.midtrans_redirect_url, '_blank')
+    } else {
+      toast.error('Gagal memuat Midtrans. Coba lagi nanti.')
+    }
+    return
+  }
+
+  snapLoading.value = false
+
+  window.snap.pay(inv.value.midtrans_snap_token, {
+    onSuccess: (result) => {
+      console.log('Payment success:', result)
+      paymentSuccess.value = true
+      toast.success('Pembayaran berhasil! Terima kasih.')
+      // Refresh invoice data
+      refreshInvoice()
+    },
+    onPending: (result) => {
+      console.log('Payment pending:', result)
+      toast.info('Pembayaran menunggu konfirmasi. Silakan selesaikan pembayaran.')
+      refreshInvoice()
+    },
+    onError: (result) => {
+      console.error('Payment error:', result)
+      toast.error('Pembayaran gagal. Silakan coba lagi.')
+    },
+    onClose: () => {
+      console.log('Snap popup closed')
+      // Refresh just in case user completed payment before closing
+      refreshInvoice()
+    }
+  })
+}
+
+async function refreshInvoice() {
+  try {
+    const { data } = await invoiceApi.getByID(route.params.id)
+    inv.value = data.data
+  } catch { /* silent */ }
 }
 
 onMounted(async () => {
   try {
     const { data } = await invoiceApi.getByID(route.params.id)
     inv.value = data.data
+    // Preload Snap.js if invoice is pending
+    if (inv.value?.status === 'PENDING' && inv.value?.midtrans_snap_token) {
+      loadSnapJS()
+    }
   } catch {
     toast.error('Gagal memuat detail invoice')
   } finally {
@@ -278,7 +427,7 @@ onMounted(async () => {
 .id-stat-label { font-size: .68rem; color: rgba(255,255,255,.35); text-transform: uppercase; letter-spacing: .05em; }
 .id-stat-val { font-size: .95rem; font-weight: 800; color: #fff; }
 
-/* ═══ Content Grid — same as ApplicationDetail ═══ */
+/* ═══ Content Grid ═══ */
 .id-content { display: grid; grid-template-columns: 1fr 340px; gap: 24px; align-items: start; }
 .id-main { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
 .id-sidebar { display: flex; flex-direction: column; gap: 16px; }
@@ -317,14 +466,35 @@ onMounted(async () => {
 .id-info-value { font-size: .82rem; color: #1e293b; font-weight: 600; }
 .id-mono { font-family: 'JetBrains Mono', 'Fira Code', monospace; font-size: .75rem; color: #475569; }
 
+/* ═══ Payment Methods Grid ═══ */
+.id-payment-methods { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.id-pm-group { padding: 14px 16px; background: #f8fafc; border-radius: 10px; border: 1px solid #f1f5f9; transition: all .15s; }
+.id-pm-group:hover { border-color: #e0e7ff; background: #fafbff; }
+.id-pm-label { font-size: .82rem; font-weight: 700; color: #0f172a; margin-bottom: 4px; }
+.id-pm-desc { font-size: .72rem; color: #94a3b8; line-height: 1.4; }
+
 /* ═══ Sidebar Cards ═══ */
 .id-pay-card { background: linear-gradient(135deg, #312e81, #4338ca); border-radius: 14px; padding: 22px; color: #fff; }
 .id-pay-icon-row { display: flex; gap: 12px; margin-bottom: 16px; }
 .id-pay-icon { width: 40px; height: 40px; border-radius: 10px; background: rgba(255,255,255,.1); display: flex; align-items: center; justify-content: center; font-size: 20px; color: rgba(255,255,255,.7); flex-shrink: 0; }
 .id-pay-heading { font-size: .88rem; font-weight: 700; }
 .id-pay-desc { font-size: .75rem; color: rgba(255,255,255,.5); margin: 4px 0 0; line-height: 1.5; }
-.id-pay-btn { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 12px; border-radius: 10px; font-size: .85rem; font-weight: 700; color: #312e81; background: #fff; text-decoration: none; box-shadow: 0 4px 14px rgba(0,0,0,.12); transition: all .2s; }
-.id-pay-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(0,0,0,.18); }
+.id-pay-btn { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 13px; border-radius: 10px; font-size: .88rem; font-weight: 700; color: #312e81; background: #fff; border: none; cursor: pointer; box-shadow: 0 4px 14px rgba(0,0,0,.12); transition: all .2s; font-family: inherit; }
+.id-pay-btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(0,0,0,.18); }
+.id-pay-btn:disabled { opacity: .7; cursor: not-allowed; transform: none; }
+
+.id-pay-spinner { width: 16px; height: 16px; border: 2px solid #c7d2fe; border-top-color: #4338ca; border-radius: 50%; animation: spin .6s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.id-fallback-link { display: flex; align-items: center; justify-content: center; gap: 5px; margin-top: 12px; font-size: .72rem; color: rgba(255,255,255,.4); text-decoration: none; transition: color .15s; }
+.id-fallback-link:hover { color: rgba(255,255,255,.7); }
+
+/* Success Card */
+.id-success-card { background: linear-gradient(135deg, #065f46, #047857); border-radius: 14px; padding: 22px; color: #fff; text-align: center; animation: fadeInUp .4s ease; }
+.id-success-icon { font-size: 36px; color: #34d399; margin-bottom: 8px; }
+.id-success-heading { font-size: .95rem; font-weight: 700; margin-bottom: 6px; }
+.id-success-desc { font-size: .78rem; color: rgba(255,255,255,.6); margin: 0; line-height: 1.5; }
+@keyframes fadeInUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
 
 .id-sidebar-card { background: #fff; border-radius: 14px; border: 1px solid #e8ecf1; padding: 22px; }
 .id-sidebar-title { font-size: .85rem; font-weight: 700; color: #0f172a; margin: 0 0 12px; display: flex; align-items: center; gap: 6px; }
@@ -359,6 +529,7 @@ onMounted(async () => {
   .id-content { grid-template-columns: 1fr; }
   .id-skel-row { grid-template-columns: 1fr; }
   .id-billing-grid { grid-template-columns: 1fr; }
+  .id-payment-methods { grid-template-columns: 1fr; }
   .id-section { padding: 20px; }
   .id-summary { width: 100%; }
 }

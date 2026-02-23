@@ -252,3 +252,16 @@ func (h *InvoiceHandler) GetByMitra(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, gin.H{"success": true, "data": all})
 }
+
+// GetMidtransClientKey — returns client key & snap URL for frontend Snap.js popup
+func (h *InvoiceHandler) GetMidtransClientKey(c *gin.Context) {
+	clientKey, snapURL, err := h.midtransSvc.GetClientKey(c.Request.Context())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"client_key": clientKey,
+		"snap_url":   snapURL,
+	})
+}

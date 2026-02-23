@@ -32,10 +32,10 @@
             </td>
             <td><span class="inv-date">{{ formatDate(inv.created_at) }}</span></td>
             <td>
-              <a v-if="inv.midtrans_redirect_url && inv.status==='PENDING'" :href="inv.midtrans_redirect_url" target="_blank" class="inv-pay-btn" @click.stop>
+              <button v-if="inv.midtrans_snap_token && inv.status==='PENDING'" class="inv-pay-btn" @click.stop="openSnapPopup(inv)">
                 <i class="ri-bank-card-line" style="font-size:14px"></i>
                 Bayar
-              </a>
+              </button>
               <router-link v-else :to="`/invoices/${inv.id}`" class="inv-view-btn" @click.stop>
                 <i class="ri-eye-line"></i>
                 Lihat
@@ -54,22 +54,80 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { invoiceApi } from '../services/api'
+import { invoiceApi, midtransApi } from '../services/api'
 import { useToastStore } from '../stores/toast'
 
 const toast = useToastStore()
 const invoices = ref([])
+let snapLoaded = false
 
 onMounted(async () => {
   try { const { data } = await invoiceApi.list(); invoices.value = data.data || [] }
   catch { toast.error('Gagal memuat invoice') }
+  // Preload Snap.js if there are pending invoices
+  if (invoices.value.some(i => i.status === 'PENDING' && i.midtrans_snap_token)) {
+    loadSnapJS()
+  }
 })
 
 function fc(v) { return new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',minimumFractionDigits:0}).format(v) }
 function formatDate(d) { return d ? new Date(d).toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'}) : '-' }
 function typeLabel(t) { return {DP:'DP',CICILAN:'Cicilan',PELUNASAN:'Pelunasan',INVOICE:'Invoice'}[t]||t }
 function statusLabel(s) { return {PAID:'Lunas',PENDING:'Menunggu',EXPIRED:'Kadaluarsa',FAILED:'Gagal',CANCELED:'Dibatalkan'}[s]||s }
+
+async function loadSnapJS() {
+  if (snapLoaded && window.snap) return true
+  try {
+    const { data } = await midtransApi.getClientKey()
+    const clientKey = data.client_key
+    const snapUrl = data.snap_url
+    if (!clientKey || !snapUrl) return false
+
+    return new Promise((resolve) => {
+      const existing = document.querySelector('script[data-midtrans-snap]')
+      if (existing) { snapLoaded = true; resolve(true); return }
+      const script = document.createElement('script')
+      script.src = snapUrl
+      script.setAttribute('data-client-key', clientKey)
+      script.setAttribute('data-midtrans-snap', 'true')
+      script.onload = () => { snapLoaded = true; resolve(true) }
+      script.onerror = () => resolve(false)
+      document.head.appendChild(script)
+    })
+  } catch { return false }
+}
+
+async function openSnapPopup(inv) {
+  if (!inv.midtrans_snap_token) {
+    toast.error('Token pembayaran tidak tersedia')
+    return
+  }
+  const loaded = await loadSnapJS()
+  if (!loaded || !window.snap) {
+    if (inv.midtrans_redirect_url) window.open(inv.midtrans_redirect_url, '_blank')
+    else toast.error('Gagal memuat Midtrans')
+    return
+  }
+  window.snap.pay(inv.midtrans_snap_token, {
+    onSuccess: () => {
+      toast.success('Pembayaran berhasil!')
+      refreshInvoices()
+    },
+    onPending: () => {
+      toast.info('Menunggu konfirmasi pembayaran.')
+      refreshInvoices()
+    },
+    onError: () => toast.error('Pembayaran gagal.'),
+    onClose: () => refreshInvoices()
+  })
+}
+
+async function refreshInvoices() {
+  try { const { data } = await invoiceApi.list(); invoices.value = data.data || [] }
+  catch { /* silent */ }
+}
 </script>
+
 
 <style scoped>
 .inv-hero { background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%); border-radius: 16px; padding: 32px 36px 24px; margin-bottom: 24px; box-shadow: 0 4px 24px rgba(15,12,41,0.2); }
@@ -110,7 +168,7 @@ function statusLabel(s) { return {PAID:'Lunas',PENDING:'Menunggu',EXPIRED:'Kadal
 .is-EXPIRED,.is-FAILED,.is-CANCELED { background: #f1f5f9; color: #64748b; }
 .is-EXPIRED .inv-badge-dot,.is-FAILED .inv-badge-dot,.is-CANCELED .inv-badge-dot { background: #94a3b8; }
 
-.inv-pay-btn { display: inline-flex; align-items: center; gap: 5px; font-size: .78rem; font-weight: 600; color: #fff; text-decoration: none; padding: 6px 14px; border-radius: 8px; background: linear-gradient(135deg, #6366f1, #8b5cf6); box-shadow: 0 2px 8px rgba(99,102,241,.25); transition: all .15s; }
+.inv-pay-btn { display: inline-flex; align-items: center; gap: 5px; font-size: .78rem; font-weight: 600; color: #fff; text-decoration: none; padding: 6px 14px; border-radius: 8px; background: linear-gradient(135deg, #6366f1, #8b5cf6); box-shadow: 0 2px 8px rgba(99,102,241,.25); transition: all .15s; border: none; cursor: pointer; font-family: inherit; }
 .inv-pay-btn:hover { box-shadow: 0 4px 14px rgba(99,102,241,.35); transform: translateY(-1px); }
 .inv-view-btn { display: inline-flex; align-items: center; gap: 4px; font-size: .78rem; font-weight: 600; color: #6366f1; text-decoration: none; padding: 6px 12px; border-radius: 8px; background: #eef2ff; transition: all .15s; }
 .inv-view-btn:hover { background: #e0e7ff; }

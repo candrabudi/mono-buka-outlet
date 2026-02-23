@@ -20,10 +20,14 @@ func NewService(settingRepo repository.SystemSettingRepository) *Service {
 	return &Service{settingRepo: settingRepo}
 }
 
+// SnapRequest — full Midtrans Snap API request
 type SnapRequest struct {
 	TransactionDetails TransactionDetails `json:"transaction_details"`
 	CustomerDetails    *CustomerDetails   `json:"customer_details,omitempty"`
 	ItemDetails        []ItemDetail       `json:"item_details,omitempty"`
+	EnabledPayments    []string           `json:"enabled_payments,omitempty"`
+	CreditCard         *CreditCardConfig  `json:"credit_card,omitempty"`
+	Expiry             *ExpiryConfig      `json:"expiry,omitempty"`
 }
 
 type TransactionDetails struct {
@@ -44,29 +48,109 @@ type ItemDetail struct {
 	Quantity int    `json:"quantity"`
 }
 
+// CreditCardConfig — credit card specific configuration
+type CreditCardConfig struct {
+	Secure      bool               `json:"secure"`            // Enable 3D Secure
+	Bank        string             `json:"bank,omitempty"`    // Acquiring bank
+	Channel     string             `json:"channel,omitempty"` // Payment channel
+	Type        string             `json:"type,omitempty"`    // authorize or capture
+	Installment *InstallmentConfig `json:"installment,omitempty"`
+}
+
+// InstallmentConfig — credit card installment config
+type InstallmentConfig struct {
+	Required bool             `json:"required"`
+	Terms    map[string][]int `json:"terms"` // e.g. {"bca": [3, 6, 12], "mandiri": [3, 6, 12]}
+}
+
+// ExpiryConfig — transaction expiry
+type ExpiryConfig struct {
+	StartTime string `json:"start_time,omitempty"` // format: "2026-02-23 18:00:00 +0700"
+	Unit      string `json:"unit"`                 // minute, hour, day
+	Duration  int    `json:"duration"`
+}
+
 type SnapResponse struct {
 	Token       string `json:"token"`
 	RedirectURL string `json:"redirect_url"`
 }
 
-func (s *Service) CreateSnapTransaction(ctx context.Context, req SnapRequest) (*SnapResponse, error) {
-	// Get settings from DB
+// DefaultEnabledPayments — all supported payment methods
+// Credit Card, PayLater (Kredivo, Akulaku), Bank Transfer, E-Wallet, QRIS, etc.
+var DefaultEnabledPayments = []string{
+	// Credit/Debit Card
+	"credit_card",
+	// Bank Transfer (VA)
+	"bca_va", "bni_va", "bri_va", "permata_va", "other_va",
+	// E-Channel (Mandiri Bill)
+	"echannel",
+	// E-Wallets
+	"gopay", "shopeepay", "dana",
+	// QRIS
+	"qris",
+	// Convenience Store
+	"indomaret", "alfamart",
+	// PayLater / Cardless Credit
+	"kredivo", "akulaku",
+}
+
+func (s *Service) getConfig(ctx context.Context) (serverKey, baseURL string, err error) {
 	serverKeySetting, err := s.settingRepo.FindByKey(ctx, "midtrans_server_key")
 	if err != nil {
-		return nil, fmt.Errorf("midtrans server key not configured: %w", err)
+		return "", "", fmt.Errorf("midtrans server key not configured: %w", err)
 	}
 	envSetting, err := s.settingRepo.FindByKey(ctx, "midtrans_environment")
 	if err != nil {
-		return nil, fmt.Errorf("midtrans environment not configured: %w", err)
+		return "", "", fmt.Errorf("midtrans environment not configured: %w", err)
 	}
 
-	serverKey := serverKeySetting.Value
-	env := envSetting.Value
-
-	// Determine API URL
-	baseURL := "https://app.sandbox.midtrans.com"
-	if env == "production" {
+	serverKey = serverKeySetting.Value
+	baseURL = "https://app.sandbox.midtrans.com"
+	if envSetting.Value == "production" {
 		baseURL = "https://app.midtrans.com"
+	}
+	return
+}
+
+// GetClientKey — returns the Midtrans client key for frontend Snap.js
+func (s *Service) GetClientKey(ctx context.Context) (clientKey, snapURL string, err error) {
+	clientKeySetting, err := s.settingRepo.FindByKey(ctx, "midtrans_client_key")
+	if err != nil {
+		return "", "", fmt.Errorf("midtrans client key not configured: %w", err)
+	}
+	envSetting, err := s.settingRepo.FindByKey(ctx, "midtrans_environment")
+	if err != nil {
+		return "", "", fmt.Errorf("midtrans environment not configured: %w", err)
+	}
+
+	clientKey = clientKeySetting.Value
+	snapURL = "https://app.sandbox.midtrans.com/snap/snap.js"
+	if envSetting.Value == "production" {
+		snapURL = "https://app.midtrans.com/snap/snap.js"
+	}
+	return
+}
+
+func (s *Service) CreateSnapTransaction(ctx context.Context, req SnapRequest) (*SnapResponse, error) {
+	serverKey, baseURL, err := s.getConfig(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	// Apply defaults if not set
+	if len(req.EnabledPayments) == 0 {
+		req.EnabledPayments = DefaultEnabledPayments
+	}
+	if req.CreditCard == nil {
+		req.CreditCard = &CreditCardConfig{
+			Secure: true, // Always enable 3D Secure
+		}
+	}
+	if req.Expiry == nil {
+		req.Expiry = &ExpiryConfig{
+			Unit:     "hour",
+			Duration: 24,
+		}
 	}
 
 	// Marshal request body
@@ -82,8 +166,8 @@ func (s *Service) CreateSnapTransaction(ctx context.Context, req SnapRequest) (*
 	}
 
 	// Basic auth with server key
-	auth := base64.StdEncoding.EncodeToString([]byte(serverKey + ":"))
-	httpReq.Header.Set("Authorization", "Basic "+auth)
+	authStr := base64.StdEncoding.EncodeToString([]byte(serverKey + ":"))
+	httpReq.Header.Set("Authorization", "Basic "+authStr)
 	httpReq.Header.Set("Content-Type", "application/json")
 	httpReq.Header.Set("Accept", "application/json")
 

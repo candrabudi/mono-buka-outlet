@@ -66,6 +66,12 @@ export const invoiceApi = {
   getByID: (id) => api.get(`/invoices/${id}`),
 }
 
+// Midtrans
+export const midtransApi = {
+  getClientKey: () => api.get('/midtrans/client-key'),
+}
+
+
 // Agreements (own)
 export const agreementApi = {
   list: () => api.get('/agreements'),

@@ -25,6 +25,10 @@ func (s *Seeder) Run() error {
 		return fmt.Errorf("failed to seed users: %w", err)
 	}
 
+	if err := s.seedMidtransSettings(); err != nil {
+		return fmt.Errorf("failed to seed midtrans settings: %w", err)
+	}
+
 	log.Println("✅ Seeding completed successfully")
 	return nil
 }
@@ -72,5 +76,64 @@ func (s *Seeder) seedUsers() error {
 	}
 
 	log.Println("  ✅ Users seeded")
+	return nil
+}
+
+func (s *Seeder) seedMidtransSettings() error {
+	log.Println("  🔹 Seeding Midtrans settings...")
+
+	settings := []struct {
+		Key         string
+		Value       string
+		GroupName   string
+		Label       string
+		Description string
+	}{
+		{
+			Key:         "midtrans_server_key",
+			Value:       "SB-Mid-server-XXXXXXXXXXXXXXXXXXXXXXXX",
+			GroupName:   "midtrans",
+			Label:       "Server Key",
+			Description: "Midtrans Server Key (dari dashboard Midtrans)",
+		},
+		{
+			Key:         "midtrans_client_key",
+			Value:       "SB-Mid-client-XXXXXXXXXXXXXXXXXXXXXXXX",
+			GroupName:   "midtrans",
+			Label:       "Client Key",
+			Description: "Midtrans Client Key (untuk Snap.js di frontend)",
+		},
+		{
+			Key:         "midtrans_environment",
+			Value:       "sandbox",
+			GroupName:   "midtrans",
+			Label:       "Environment",
+			Description: "Environment Midtrans: sandbox atau production",
+		},
+	}
+
+	for _, st := range settings {
+		var exists bool
+		err := s.db.QueryRow("SELECT EXISTS(SELECT 1 FROM system_settings WHERE key = $1)", st.Key).Scan(&exists)
+		if err != nil {
+			return err
+		}
+		if exists {
+			log.Printf("    ⏭️  Setting '%s' already exists, skipping", st.Key)
+			continue
+		}
+
+		_, err = s.db.Exec(
+			`INSERT INTO system_settings (id, key, value, group_name, label, description, created_at, updated_at)
+			 VALUES ($1, $2, $3, $4, $5, $6, $7, $7)`,
+			uuid.New(), st.Key, st.Value, st.GroupName, st.Label, st.Description, time.Now(),
+		)
+		if err != nil {
+			return fmt.Errorf("failed to seed setting %s: %w", st.Key, err)
+		}
+		log.Printf("    ✅ Setting '%s' seeded", st.Key)
+	}
+
+	log.Println("  ✅ Midtrans settings seeded")
 	return nil
 }

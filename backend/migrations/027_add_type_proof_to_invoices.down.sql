@@ -1,0 +1,2 @@
+ALTER TABLE invoices DROP COLUMN IF EXISTS type;
+ALTER TABLE invoices DROP COLUMN IF EXISTS proof_url;
