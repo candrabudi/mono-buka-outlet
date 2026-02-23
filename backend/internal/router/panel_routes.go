@@ -190,6 +190,42 @@ func RegisterPanelRoutes(r *gin.Engine, h Handlers, jwtSecret string) {
 				apps.GET("/:id", h.Mitra.GetApplication)
 				apps.PATCH("/:id/review", h.Mitra.ReviewApplication)
 			}
+
+			// Ebooks — master, admin
+			ebooks := adminProtected.Group("/ebooks")
+			ebooks.Use(middleware.RoleAuth(entity.RoleMaster, entity.RoleAdmin))
+			{
+				ebooks.POST("", h.Ebook.Create)
+				ebooks.GET("", h.Ebook.GetAll)
+				ebooks.GET("/:id", h.Ebook.GetByID)
+				ebooks.PUT("/:id", h.Ebook.Update)
+				ebooks.DELETE("/:id", h.Ebook.Delete)
+				ebooks.PATCH("/:id/toggle", h.Ebook.ToggleActive)
+			}
+
+			// Ebook Categories — master, admin
+			ebookCats := adminProtected.Group("/ebook-categories")
+			ebookCats.Use(middleware.RoleAuth(entity.RoleMaster, entity.RoleAdmin))
+			{
+				ebookCats.POST("", h.EbookCategory.Create)
+				ebookCats.GET("", h.EbookCategory.GetAll)
+				ebookCats.GET("/:id", h.EbookCategory.GetByID)
+				ebookCats.PUT("/:id", h.EbookCategory.Update)
+				ebookCats.DELETE("/:id", h.EbookCategory.Delete)
+				ebookCats.PATCH("/:id/toggle", h.EbookCategory.ToggleActive)
+			}
+
+			// Ebook Orders — master, admin (download approval)
+			ebookOrders := adminProtected.Group("/ebook-orders")
+			ebookOrders.Use(middleware.RoleAuth(entity.RoleMaster, entity.RoleAdmin))
+			{
+				ebookOrders.GET("", h.Ebook.ListAllOrders)
+				ebookOrders.GET("/download-requests", h.Ebook.ListDownloadRequests)
+				ebookOrders.PATCH("/:id/approve-download", h.Ebook.ApproveDownload)
+				ebookOrders.PATCH("/:id/reject-download", h.Ebook.RejectDownload)
+				ebookOrders.PATCH("/:id/approve-payment", h.Ebook.ApprovePayment)
+				ebookOrders.PATCH("/:id/reject-payment", h.Ebook.RejectPayment)
+			}
 		}
 	}
 }

@@ -186,3 +186,30 @@ export const applicationApi = {
   get: (id) => api.get(`/partnership-applications/${id}`),
   review: (id, data) => api.patch(`/partnership-applications/${id}/review`, data),
 }
+
+export const ebookApi = {
+  list: (params) => api.get('/ebooks', { params }),
+  get: (id) => api.get(`/ebooks/${id}`),
+  create: (data) => api.post('/ebooks', data),
+  update: (id, data) => api.put(`/ebooks/${id}`, data),
+  delete: (id) => api.delete(`/ebooks/${id}`),
+  toggle: (id) => api.patch(`/ebooks/${id}/toggle`),
+}
+
+export const ebookOrderApi = {
+  list: (params) => api.get('/ebook-orders', { params }),
+  downloadRequests: () => api.get('/ebook-orders/download-requests'),
+  approveDownload: (id, data) => api.patch(`/ebook-orders/${id}/approve-download`, data),
+  rejectDownload: (id, data) => api.patch(`/ebook-orders/${id}/reject-download`, data),
+  approvePayment: (id) => api.patch(`/ebook-orders/${id}/approve-payment`),
+  rejectPayment: (id, data) => api.patch(`/ebook-orders/${id}/reject-payment`, data),
+}
+
+export const ebookCategoryApi = {
+  list: (params) => api.get('/ebook-categories', { params }),
+  get: (id) => api.get(`/ebook-categories/${id}`),
+  create: (data) => api.post('/ebook-categories', data),
+  update: (id, data) => api.put(`/ebook-categories/${id}`, data),
+  delete: (id) => api.delete(`/ebook-categories/${id}`),
+  toggle: (id) => api.patch(`/ebook-categories/${id}/toggle`),
+}

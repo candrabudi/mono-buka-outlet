@@ -180,3 +180,44 @@ type PartnershipApplicationRepository interface {
 	HasActiveApplication(ctx context.Context, mitraID, outletID, packageID uuid.UUID) (bool, error)
 	CancelByMitra(ctx context.Context, id, mitraID uuid.UUID) error
 }
+
+type EbookRepository interface {
+	Create(ctx context.Context, ebook *entity.Ebook) error
+	FindByID(ctx context.Context, id uuid.UUID) (*entity.Ebook, error)
+	FindBySlug(ctx context.Context, slug string) (*entity.Ebook, error)
+	FindAll(ctx context.Context, activeOnly bool, search string, page, limit int) ([]*entity.Ebook, int, error)
+	Update(ctx context.Context, ebook *entity.Ebook) error
+	Delete(ctx context.Context, id uuid.UUID) error
+	IncrementSold(ctx context.Context, id uuid.UUID) error
+	SyncCategories(ctx context.Context, ebookID uuid.UUID, categoryIDs []uuid.UUID) error
+}
+
+type EbookCategoryRepository interface {
+	Create(ctx context.Context, cat *entity.EbookCategory) error
+	FindByID(ctx context.Context, id uuid.UUID) (*entity.EbookCategory, error)
+	FindBySlug(ctx context.Context, slug string) (*entity.EbookCategory, error)
+	FindAll(ctx context.Context, activeOnly bool) ([]*entity.EbookCategory, error)
+	Update(ctx context.Context, cat *entity.EbookCategory) error
+	Delete(ctx context.Context, id uuid.UUID) error
+}
+
+type EbookOrderRepository interface {
+	Create(ctx context.Context, order *entity.EbookOrder) error
+	FindByID(ctx context.Context, id uuid.UUID) (*entity.EbookOrder, error)
+	FindByUserID(ctx context.Context, userID uuid.UUID) ([]*entity.EbookOrder, error)
+	FindByMidtransOrderID(ctx context.Context, orderID string) (*entity.EbookOrder, error)
+	HasUserPurchased(ctx context.Context, userID, ebookID uuid.UUID) (bool, error)
+	UpdateMidtransStatus(ctx context.Context, orderID string, txnStatus, paymentType, txnID string) error
+	GenerateOrderNumber(ctx context.Context) (string, error)
+
+	// Download approval workflow
+	RequestDownload(ctx context.Context, id uuid.UUID) error
+	ApproveDownload(ctx context.Context, id uuid.UUID, note string) error
+	RejectDownload(ctx context.Context, id uuid.UUID, note string) error
+	FindPendingDownloads(ctx context.Context) ([]*entity.EbookOrder, error)
+	FindAllOrders(ctx context.Context, status, downloadStatus string, page, limit int) ([]*entity.EbookOrder, int, error)
+	CancelOrder(ctx context.Context, id uuid.UUID) error
+	UploadPaymentProof(ctx context.Context, id uuid.UUID, proofURL string) error
+	ApprovePayment(ctx context.Context, id uuid.UUID) error
+	RejectPayment(ctx context.Context, id uuid.UUID, note string) error
+}

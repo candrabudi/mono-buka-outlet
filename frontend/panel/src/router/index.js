@@ -53,6 +53,14 @@ const routes = [
       // Location Submissions — master, admin
       { path: 'locations', name: 'Locations', component: () => import('../pages/locations/LocationList.vue'), meta: { roles: ['master', 'admin'] } },
       { path: 'locations/:id', name: 'LocationDetail', component: () => import('../pages/locations/LocationDetail.vue'), meta: { roles: ['master', 'admin'] } },
+
+      // Ebooks — master, admin
+      { path: 'ebooks', name: 'Ebooks', component: () => import('../pages/ebooks/EbookList.vue'), meta: { roles: ['master', 'admin'] } },
+      { path: 'ebooks/create', name: 'EbookCreate', component: () => import('../pages/ebooks/EbookForm.vue'), meta: { roles: ['master', 'admin'] } },
+      { path: 'ebooks/:id', name: 'EbookEdit', component: () => import('../pages/ebooks/EbookForm.vue'), meta: { roles: ['master', 'admin'] } },
+      { path: 'ebook-orders', name: 'EbookOrders', component: () => import('../pages/ebooks/EbookOrderList.vue'), meta: { roles: ['master', 'admin'] } },
+      { path: 'ebook-categories', name: 'EbookCategories', component: () => import('../pages/ebooks/EbookCategories.vue'), meta: { roles: ['master', 'admin'] } },
+      { path: 'download-requests', name: 'DownloadRequests', component: () => import('../pages/ebooks/DownloadRequests.vue'), meta: { roles: ['master', 'admin'] } },
     ],
   },
 

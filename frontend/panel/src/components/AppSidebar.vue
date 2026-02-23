@@ -122,6 +122,62 @@
           </ul>
         </div>
 
+        <!-- Ebook -->
+        <div class="sidebar-section" v-if="auth.hasRole('master', 'admin')">
+          <h4 class="sidebar-section-label">Ebook</h4>
+          <ul>
+            <li>
+              <router-link to="/ebooks" class="sidebar-link" :class="{ active: $route.path === '/ebooks' || $route.path.startsWith('/ebooks/') }">
+                <span class="sidebar-link-icon">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" stroke="currentColor" stroke-width="2" fill="none" class="path-1"/>
+                    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" fill="currentColor" class="path-1"/>
+                    <path d="M8 7h8M8 11h5" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" class="path-2"/>
+                  </svg>
+                </span>
+                <span class="sidebar-link-text">Ebook</span>
+              </router-link>
+            </li>
+            <li>
+              <router-link to="/ebook-categories" class="sidebar-link" :class="{ active: $route.path.startsWith('/ebook-categories') }">
+                <span class="sidebar-link-icon">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M10 3H3v7h7V3z" fill="currentColor" class="path-1"/>
+                    <path d="M21 3h-7v7h7V3z" fill="currentColor" class="path-1"/>
+                    <path d="M10 14H3v7h7v-7z" fill="currentColor" class="path-1"/>
+                    <path d="M21 14h-7v7h7v-7z" fill="currentColor" class="path-1"/>
+                  </svg>
+                </span>
+                <span class="sidebar-link-text">Kategori Ebook</span>
+              </router-link>
+            </li>
+            <li>
+              <router-link to="/ebook-orders" class="sidebar-link" :class="{ active: $route.path.startsWith('/ebook-orders') }">
+                <span class="sidebar-link-icon">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2" stroke="currentColor" stroke-width="2" fill="none" class="path-1"/>
+                    <rect x="9" y="3" width="6" height="4" rx="1" fill="currentColor" class="path-1"/>
+                    <path d="M9 12h6M9 16h4" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" class="path-2"/>
+                  </svg>
+                </span>
+                <span class="sidebar-link-text">Pesanan Ebook</span>
+              </router-link>
+            </li>
+            <li>
+              <router-link to="/download-requests" class="sidebar-link" :class="{ active: $route.path.startsWith('/download-requests') }">
+                <span class="sidebar-link-icon">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" stroke="currentColor" stroke-width="2" fill="none" class="path-1"/>
+                    <polyline points="7 10 12 15 17 10" stroke="var(--primary)" stroke-width="2" fill="none" class="path-2"/>
+                    <line x1="12" y1="15" x2="12" y2="3" stroke="var(--primary)" stroke-width="2" class="path-2"/>
+                  </svg>
+                </span>
+                <span class="sidebar-link-text">Request Download</span>
+              </router-link>
+            </li>
+          </ul>
+        </div>
+
         <!-- Keuangan -->
         <div class="sidebar-section" v-if="auth.hasRole('master', 'finance')">
           <h4 class="sidebar-section-label">Keuangan</h4>

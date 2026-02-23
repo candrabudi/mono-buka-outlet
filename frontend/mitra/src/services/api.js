@@ -83,3 +83,24 @@ export const locationApi = {
   getByID: (id) => api.get(`/locations/${id}`),
   create: (data) => api.post('/locations', data),
 }
+
+// Ebooks
+export const ebookApi = {
+  list: (params) => api.get('/ebooks', { params }),
+  get: (id) => api.get(`/ebooks/${id}`),
+  purchase: (id) => api.post(`/ebooks/${id}/purchase`),
+  readUrl: (id) => `/api/v1/mitra/ebooks/${id}/read`,
+  downloadUrl: (id) => `/api/v1/mitra/ebooks/${id}/download`,
+  requestDownload: (id) => api.post(`/ebook-orders/${id}/request-download`),
+  cancelOrder: (id) => api.post(`/ebook-orders/${id}/cancel`),
+  uploadProof: (id, data) => api.post(`/ebook-orders/${id}/upload-proof`, data),
+  myOrders: () => api.get('/ebook-orders'),
+}
+
+export const uploadApi = {
+  upload: (file) => {
+    const fd = new FormData()
+    fd.append('file', file)
+    return api.post('/upload', fd, { headers: { 'Content-Type': 'multipart/form-data' } })
+  },
+}

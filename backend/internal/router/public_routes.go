@@ -19,6 +19,7 @@ func RegisterPublicRoutes(r *gin.Engine, h Handlers, jwtSecret string) {
 
 		// Midtrans webhook (no auth)
 		pub.POST("/midtrans/webhook", h.Invoice.MidtransWebhook)
+		pub.POST("/midtrans/ebook-webhook", h.Ebook.EbookWebhook)
 	}
 
 	// ═══════════════════════════════════════════

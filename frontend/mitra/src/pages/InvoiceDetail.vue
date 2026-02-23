@@ -165,7 +165,7 @@
                 <div class="id-pm-desc">GoPay, ShopeePay, DANA, QRIS</div>
               </div>
               <div class="id-pm-group">
-                <div class="id-pm-label">🛒 PayLater & Minimarket</div>
+                <div class="id-pm-label"><i class="ri-shopping-cart-line"></i> PayLater & Minimarket</div>
                 <div class="id-pm-desc">Kredivo, Akulaku, Indomaret, Alfamart</div>
               </div>
             </div>

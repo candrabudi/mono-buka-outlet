@@ -73,6 +73,25 @@
           </ul>
         </div>
 
+        <!-- Ebook -->
+        <div class="sidebar-section">
+          <h4 class="sidebar-section-label">Ebook</h4>
+          <ul>
+            <li>
+              <router-link to="/ebooks" class="sidebar-link" :class="{ active: $route.path.startsWith('/ebooks') }">
+                <span class="sidebar-link-icon"><i class="ri-book-2-line"></i></span>
+                <span class="sidebar-link-text">Jelajahi Ebook</span>
+              </router-link>
+            </li>
+            <li>
+              <router-link to="/ebook-orders" class="sidebar-link" :class="{ active: $route.path.startsWith('/ebook-orders') }">
+                <span class="sidebar-link-icon"><i class="ri-shopping-bag-line"></i></span>
+                <span class="sidebar-link-text">Pesanan Ebook</span>
+              </router-link>
+            </li>
+          </ul>
+        </div>
+
         <!-- Akun -->
         <div class="sidebar-section">
           <h4 class="sidebar-section-label">Akun</h4>

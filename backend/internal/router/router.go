@@ -25,6 +25,8 @@ type Handlers struct {
 	Setting        *handler.SettingHandler
 	Invoice        *handler.InvoiceHandler
 	LocationSub    *handler.LocationSubmissionHandler
+	Ebook          *handler.EbookHandler
+	EbookCategory  *handler.EbookCategoryHandler
 }
 
 func Setup(r *gin.Engine, h Handlers, jwtSecret, corsOrigins string) {

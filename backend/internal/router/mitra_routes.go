@@ -57,6 +57,19 @@ func RegisterMitraRoutes(r *gin.Engine, h Handlers, jwtSecret string) {
 
 			// Locations (own)
 			mitraProtected.GET("/locations", h.LocationSub.GetByMitra)
+
+			// Ebooks
+			mitraProtected.GET("/ebook-categories", h.EbookCategory.GetAll)
+			mitraProtected.GET("/ebooks", h.Ebook.ListForMitra)
+			mitraProtected.GET("/ebooks/:id", h.Ebook.GetForMitra)
+			mitraProtected.POST("/ebooks/:id/purchase", h.Ebook.Purchase)
+			mitraProtected.GET("/ebooks/:id/read", h.Ebook.ReadOnline)
+			mitraProtected.GET("/ebooks/:id/download", h.Ebook.Download)
+			mitraProtected.POST("/ebook-orders/:id/request-download", h.Ebook.RequestDownload)
+			mitraProtected.GET("/ebook-orders", h.Ebook.MyOrders)
+			mitraProtected.POST("/ebook-orders/:id/cancel", h.Ebook.CancelOrder)
+			mitraProtected.POST("/ebook-orders/:id/upload-proof", h.Ebook.UploadPaymentProof)
+			mitraProtected.POST("/upload", h.Upload.Upload)
 		}
 	}
 }

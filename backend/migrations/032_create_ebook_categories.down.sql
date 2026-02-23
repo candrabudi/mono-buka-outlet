@@ -1,0 +1,3 @@
+DROP TABLE IF EXISTS ebook_category_mapping;
+DROP TABLE IF EXISTS ebook_categories;
+ALTER TABLE ebooks ADD COLUMN IF NOT EXISTS category VARCHAR(100) DEFAULT '' NOT NULL;

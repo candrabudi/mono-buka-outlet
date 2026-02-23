@@ -87,6 +87,9 @@ func main() {
 	invoiceRepo := postgres.NewInvoiceRepo(db)
 	locationSubRepo := postgres.NewLocationSubmissionRepo(db)
 	partnershipAppRepo := postgres.NewPartnershipApplicationRepo(db)
+	ebookRepo := postgres.NewEbookRepo(db)
+	ebookOrderRepo := postgres.NewEbookOrderRepo(db)
+	ebookCategoryRepo := postgres.NewEbookCategoryRepo(db)
 
 	emailService := email.NewEmailService(email.SMTPConfig{
 		Host:     cfg.SMTP.Host,
@@ -129,6 +132,8 @@ func main() {
 		Setting:        handler.NewSettingHandler(settingRepo),
 		Invoice:        handler.NewInvoiceHandler(invoiceRepo, partnershipRepo, settingRepo, midtrans.NewService(settingRepo)),
 		LocationSub:    handler.NewLocationSubmissionHandler(locationSubRepo),
+		Ebook:          handler.NewEbookHandler(ebookRepo, ebookOrderRepo, settingRepo, midtrans.NewService(settingRepo), cfg.Upload.Dir),
+		EbookCategory:  handler.NewEbookCategoryHandler(ebookCategoryRepo),
 	}
 
 	if cfg.App.Env == "production" {

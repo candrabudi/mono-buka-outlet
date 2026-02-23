@@ -83,6 +83,10 @@ const pageTitles = {
   Agreements: 'Agreement',
   Locations: 'Pengajuan Lokasi',
   Settings: 'Pengaturan Profil',
+  Ebooks: 'Jelajahi Ebook',
+  EbookDetail: 'Detail Ebook',
+  EbookReader: 'Baca Ebook',
+  EbookOrders: 'Pesanan Ebook',
 }
 const pageSubtitles = {
   Dashboard: 'Pantau perkembangan kemitraan Anda',
@@ -96,6 +100,10 @@ const pageSubtitles = {
   Agreements: 'Dokumen perjanjian kemitraan',
   Locations: 'Pengajuan & status lokasi outlet',
   Settings: 'Kelola informasi akun & keamanan',
+  Ebooks: 'Temukan ebook bermanfaat untuk bisnis Anda',
+  EbookDetail: 'Informasi lengkap & pembelian ebook',
+  EbookReader: 'Baca ebook langsung di browser',
+  EbookOrders: 'Riwayat pembelian ebook Anda',
 }
 
 const pageTitle = computed(() => pageTitles[route.name] || '')

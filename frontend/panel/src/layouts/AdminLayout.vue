@@ -110,6 +110,11 @@ const pageTitles = {
   Locations: 'Pengajuan Lokasi',
   LocationDetail: 'Detail Lokasi',
   Applications: 'Pengajuan Partnership',
+  Ebooks: 'Ebook Management',
+  EbookCreate: 'Tambah Ebook',
+  EbookEdit: 'Edit Ebook',
+  EbookOrders: 'Pesanan Ebook',
+  DownloadRequests: 'Request Download',
 }
 const pageSubtitles = {
   Dashboard: "Let's check your update today",
@@ -128,6 +133,11 @@ const pageSubtitles = {
   Locations: 'Kelola pengajuan & survei lokasi mitra',
   LocationDetail: 'Detail informasi, scoring, survei & approval',
   Applications: 'Review dan kelola pengajuan kemitraan dari mitra',
+  Ebooks: 'Kelola katalog ebook untuk mitra',
+  EbookCreate: 'Tambahkan ebook baru',
+  EbookEdit: 'Perbarui informasi ebook',
+  EbookOrders: 'Pantau semua transaksi ebook',
+  DownloadRequests: 'Approve atau reject permintaan download',
 }
 
 const pageTitle = computed(() => pageTitles[route.name] || '')

@@ -14,9 +14,14 @@ func JWTAuth(secret string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
-			c.JSON(http.StatusUnauthorized, gin.H{"success": false, "error": "Authorization header required"})
-			c.Abort()
-			return
+			// Fallback: check ?token= query param (used by iframe/embed for PDF viewing)
+			if tokenParam := c.Query("token"); tokenParam != "" {
+				authHeader = "Bearer " + tokenParam
+			} else {
+				c.JSON(http.StatusUnauthorized, gin.H{"success": false, "error": "Authorization header required"})
+				c.Abort()
+				return
+			}
 		}
 		parts := strings.SplitN(authHeader, " ", 2)
 		if len(parts) != 2 || parts[0] != "Bearer" {
