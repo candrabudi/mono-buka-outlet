@@ -164,8 +164,22 @@ ok "Backend .env generated (port: ${API_PORT})"
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 log "🔨 Building backend..."
 cd "$REPO_DIR/backend"
+
+# Ensure Go is in PATH (common install locations)
+if ! command -v go &>/dev/null; then
+  for GO_DIR in /usr/local/go /usr/lib/go /snap/go/current; do
+    if [ -x "$GO_DIR/bin/go" ]; then
+      export PATH="$GO_DIR/bin:$PATH"
+      export GOROOT="$GO_DIR"
+      break
+    fi
+  done
+fi
+export GOPATH="${GOPATH:-$HOME/go}"
+export PATH="$GOPATH/bin:$PATH"
+
 go build -o bukaoutlet-api ./cmd/api || fail "Go build gagal"
-ok "Backend binary built"
+ok "Backend binary built ($(go version))"
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 # 5. DEPLOY BACKEND + MIGRATE + SEED
