@@ -7,6 +7,31 @@
 set -e
 
 # ┌──────────────────────────────────────────────────────────────
+# │ PATH SETUP — Ensure Go, Node, npm, pm2 are available
+# └──────────────────────────────────────────────────────────────
+# Source common profile files (nvm, fnm, etc.)
+for f in "$HOME/.bashrc" "$HOME/.profile" "$HOME/.nvm/nvm.sh" "$HOME/.fnm/fnm"; do
+  [ -f "$f" ] && source "$f" 2>/dev/null || true
+done
+
+# Go
+for GO_DIR in /usr/local/go /usr/lib/go /snap/go/current; do
+  [ -x "$GO_DIR/bin/go" ] && export PATH="$GO_DIR/bin:$PATH" && export GOROOT="$GO_DIR" && break
+done
+export GOPATH="${GOPATH:-$HOME/go}"
+export PATH="$GOPATH/bin:$PATH"
+
+# Node.js / npm / pm2 (common locations)
+for NODE_DIR in /usr/local/bin /usr/bin "$HOME/.nvm/versions/node"/*/bin "$HOME/.local/bin" "$HOME/.npm-global/bin" /usr/local/lib/npm/bin; do
+  [ -d "$NODE_DIR" ] && export PATH="$NODE_DIR:$PATH"
+done
+# npm global bin
+if command -v npm &>/dev/null; then
+  NPM_GLOBAL="$(npm -g prefix 2>/dev/null)/bin"
+  [ -d "$NPM_GLOBAL" ] && export PATH="$NPM_GLOBAL:$PATH"
+fi
+
+# ┌──────────────────────────────────────────────────────────────
 # │ CONFIG — Sesuaikan bagian ini
 # └──────────────────────────────────────────────────────────────
 REPO_DIR="/home/outlet_ready"
@@ -164,20 +189,6 @@ ok "Backend .env generated (port: ${API_PORT})"
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 log "🔨 Building backend..."
 cd "$REPO_DIR/backend"
-
-# Ensure Go is in PATH (common install locations)
-if ! command -v go &>/dev/null; then
-  for GO_DIR in /usr/local/go /usr/lib/go /snap/go/current; do
-    if [ -x "$GO_DIR/bin/go" ]; then
-      export PATH="$GO_DIR/bin:$PATH"
-      export GOROOT="$GO_DIR"
-      break
-    fi
-  done
-fi
-export GOPATH="${GOPATH:-$HOME/go}"
-export PATH="$GOPATH/bin:$PATH"
-
 go build -o bukaoutlet-api ./cmd/api || fail "Go build gagal"
 ok "Backend binary built ($(go version))"
 
