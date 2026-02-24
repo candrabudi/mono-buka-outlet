@@ -7,54 +7,6 @@
 set -e
 
 # ┌──────────────────────────────────────────────────────────────
-# │ PATH SETUP — Ensure Go, Node 20+, npm, pm2 are available
-# └──────────────────────────────────────────────────────────────
-# Source common profile files (nvm, fnm, etc.)
-export NVM_DIR="${NVM_DIR:-$HOME/.nvm}"
-for f in "$HOME/.bashrc" "$HOME/.profile" "$NVM_DIR/nvm.sh"; do
-  [ -f "$f" ] && source "$f" 2>/dev/null || true
-done
-
-# Go
-for GO_DIR in /usr/local/go /usr/lib/go /snap/go/current; do
-  [ -x "$GO_DIR/bin/go" ] && export PATH="$GO_DIR/bin:$PATH" && export GOROOT="$GO_DIR" && break
-done
-export GOPATH="${GOPATH:-$HOME/go}"
-export PATH="$GOPATH/bin:$PATH"
-
-# Node.js — require v18+ for Vite 6. Auto-install via nvm if needed.
-NODE_REQUIRED=18
-CURRENT_NODE_MAJOR=$(node -v 2>/dev/null | sed 's/v\([0-9]*\).*/\1/' || echo "0")
-
-if [ "$CURRENT_NODE_MAJOR" -lt "$NODE_REQUIRED" ]; then
-  echo "⚠ Node.js v${CURRENT_NODE_MAJOR} detected, need v${NODE_REQUIRED}+. Installing via nvm..."
-
-  # Install nvm if not present
-  if ! command -v nvm &>/dev/null; then
-    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash
-    export NVM_DIR="$HOME/.nvm"
-    source "$NVM_DIR/nvm.sh"
-  fi
-
-  nvm install 20
-  nvm use 20
-  nvm alias default 20
-  echo "✔ Node.js $(node -v) installed via nvm"
-fi
-
-# Ensure npm global bin & pm2 are in PATH
-if command -v npm &>/dev/null; then
-  NPM_GLOBAL="$(npm -g prefix 2>/dev/null)/bin"
-  [ -d "$NPM_GLOBAL" ] && export PATH="$NPM_GLOBAL:$PATH"
-fi
-
-# Install pm2 globally if not present
-if ! command -v pm2 &>/dev/null; then
-  echo "⚠ pm2 not found, installing..."
-  npm install -g pm2
-fi
-
-# ┌──────────────────────────────────────────────────────────────
 # │ CONFIG — Sesuaikan bagian ini
 # └──────────────────────────────────────────────────────────────
 REPO_DIR="/home/outlet_ready"
@@ -212,6 +164,20 @@ ok "Backend .env generated (port: ${API_PORT})"
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 log "🔨 Building backend..."
 cd "$REPO_DIR/backend"
+
+# Ensure Go is in PATH (common install locations)
+if ! command -v go &>/dev/null; then
+  for GO_DIR in /usr/local/go /usr/lib/go /snap/go/current; do
+    if [ -x "$GO_DIR/bin/go" ]; then
+      export PATH="$GO_DIR/bin:$PATH"
+      export GOROOT="$GO_DIR"
+      break
+    fi
+  done
+fi
+export GOPATH="${GOPATH:-$HOME/go}"
+export PATH="$GOPATH/bin:$PATH"
+
 go build -o bukaoutlet-api ./cmd/api || fail "Go build gagal"
 ok "Backend binary built ($(go version))"
 
