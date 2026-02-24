@@ -238,6 +238,33 @@ else
 fi
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# 5.5 ENSURE NODE.JS 18+ (required by Vite 7)
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+log "🔧 Checking Node.js version..."
+
+# Try to load nvm (common locations)
+export NVM_DIR="${NVM_DIR:-$HOME/.nvm}"
+if [ -s "$NVM_DIR/nvm.sh" ]; then
+  . "$NVM_DIR/nvm.sh"
+  nvm use 20 2>/dev/null || nvm install 20
+  ok "Using Node.js via nvm: $(node -v)"
+elif [ -s "/usr/local/nvm/nvm.sh" ]; then
+  . "/usr/local/nvm/nvm.sh"
+  nvm use 20 2>/dev/null || nvm install 20
+  ok "Using Node.js via nvm: $(node -v)"
+else
+  # No nvm — check current node version
+  NODE_MAJOR=$(node -v 2>/dev/null | sed 's/v\([0-9]*\).*/\1/' || echo "0")
+  if [ "$NODE_MAJOR" -lt 18 ]; then
+    fail "Node.js 18+ required (found: $(node -v 2>/dev/null || echo 'none')). Install nvm and Node 20: curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash && nvm install 20"
+  fi
+  ok "Node.js $(node -v) — OK (≥18)"
+fi
+
+# Also ensure npm is available
+command -v npm &>/dev/null || fail "npm not found"
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 # 6. FRONTEND .env — Auto generate
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 log "📝 Generating frontend .env files..."
