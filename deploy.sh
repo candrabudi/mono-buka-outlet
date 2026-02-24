@@ -287,16 +287,22 @@ ok "Mitra .env.production → ${API_DOMAIN}/api/v1/mitra"
 log "🎨 Building panel frontend..."
 cd "$REPO_DIR/frontend/panel"
 npm install --silent 2>/dev/null
-npm run build || fail "Panel build gagal"
-ok "Panel built"
+PANEL_BUILD_OK=false
+if npm run build; then
+  ok "Panel built"
+  PANEL_BUILD_OK=true
+else
+  warn "Panel build gagal (Node.js version? Vite error?) — skipping panel deploy"
+fi
 
-log "📦 Deploying panel..."
-mkdir -p "$PANEL_DEPLOY"
-rm -rf "${PANEL_DEPLOY:?}"/*
-cp -r "$REPO_DIR/frontend/panel/dist/"* "$PANEL_DEPLOY/"
+if [ "$PANEL_BUILD_OK" = true ]; then
+  log "📦 Deploying panel..."
+  mkdir -p "$PANEL_DEPLOY"
+  rm -rf "${PANEL_DEPLOY:?}"/*
+  cp -r "$REPO_DIR/frontend/panel/dist/"* "$PANEL_DEPLOY/"
 
-# .htaccess for Vue Router (OpenLiteSpeed/CyberPanel)
-cat > "$PANEL_DEPLOY/.htaccess" << 'HTEOF'
+  # .htaccess for Vue Router (OpenLiteSpeed/CyberPanel)
+  cat > "$PANEL_DEPLOY/.htaccess" << 'HTEOF'
 <IfModule mod_rewrite.c>
   RewriteEngine On
   RewriteBase /
@@ -306,7 +312,8 @@ cat > "$PANEL_DEPLOY/.htaccess" << 'HTEOF'
   RewriteRule . /index.html [L]
 </IfModule>
 HTEOF
-ok "Panel deployed → $PANEL_DEPLOY (with .htaccess)"
+  ok "Panel deployed → $PANEL_DEPLOY (with .htaccess)"
+fi
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 # 8. BUILD & DEPLOY MITRA FRONTEND
@@ -314,16 +321,22 @@ ok "Panel deployed → $PANEL_DEPLOY (with .htaccess)"
 log "🎨 Building mitra frontend..."
 cd "$REPO_DIR/frontend/mitra"
 npm install --silent 2>/dev/null
-npm run build || fail "Mitra build gagal"
-ok "Mitra built"
+MITRA_BUILD_OK=false
+if npm run build; then
+  ok "Mitra built"
+  MITRA_BUILD_OK=true
+else
+  warn "Mitra build gagal (Node.js version? Vite error?) — skipping mitra deploy"
+fi
 
-log "📦 Deploying mitra..."
-mkdir -p "$MITRA_DEPLOY"
-rm -rf "${MITRA_DEPLOY:?}"/*
-cp -r "$REPO_DIR/frontend/mitra/dist/"* "$MITRA_DEPLOY/"
+if [ "$MITRA_BUILD_OK" = true ]; then
+  log "📦 Deploying mitra..."
+  mkdir -p "$MITRA_DEPLOY"
+  rm -rf "${MITRA_DEPLOY:?}"/*
+  cp -r "$REPO_DIR/frontend/mitra/dist/"* "$MITRA_DEPLOY/"
 
-# .htaccess for Vue Router (OpenLiteSpeed/CyberPanel)
-cat > "$MITRA_DEPLOY/.htaccess" << 'HTEOF'
+  # .htaccess for Vue Router (OpenLiteSpeed/CyberPanel)
+  cat > "$MITRA_DEPLOY/.htaccess" << 'HTEOF'
 <IfModule mod_rewrite.c>
   RewriteEngine On
   RewriteBase /
@@ -333,7 +346,8 @@ cat > "$MITRA_DEPLOY/.htaccess" << 'HTEOF'
   RewriteRule . /index.html [L]
 </IfModule>
 HTEOF
-ok "Mitra deployed → $MITRA_DEPLOY (with .htaccess)"
+  ok "Mitra deployed → $MITRA_DEPLOY (with .htaccess)"
+fi
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 # DONE
