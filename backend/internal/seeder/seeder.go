@@ -29,6 +29,18 @@ func (s *Seeder) Run() error {
 		return fmt.Errorf("failed to seed midtrans settings: %w", err)
 	}
 
+	if err := s.seedAIKnowledgeBase(); err != nil {
+		return fmt.Errorf("failed to seed AI knowledge base: %w", err)
+	}
+
+	if err := s.seedOutlets(); err != nil {
+		return fmt.Errorf("failed to seed outlets: %w", err)
+	}
+
+	if err := s.seedEbooks(); err != nil {
+		return fmt.Errorf("failed to seed ebooks: %w", err)
+	}
+
 	log.Println("✅ Seeding completed successfully")
 	return nil
 }

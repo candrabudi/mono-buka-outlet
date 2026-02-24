@@ -21,12 +21,12 @@ func NewOutletRepo(db *sql.DB) *OutletRepo {
 }
 
 // Select columns include a LEFT JOIN on outlet_categories to populate category_name and category_icon
-var outletSelectQuery = `SELECT o.id, o.name, o.slug, o.logo, o.banner, o.category_id, o.category,
+var outletSelectQuery = `SELECT o.id, o.name, o.slug, COALESCE(o.logo,''), COALESCE(o.banner,''), o.category_id, COALESCE(o.category,''),
 	COALESCE(oc.name, o.category, ''), COALESCE(oc.icon, ''),
-	o.description, o.short_description,
-	o.minimum_investment, o.maximum_investment, o.profit_sharing_percentage, o.estimated_roi,
-	o.location_requirement, o.address, o.city, o.province, o.latitude, o.longitude,
-	o.contact_phone, o.contact_email, o.contact_whatsapp, o.website,
+	COALESCE(o.description,''), COALESCE(o.short_description,''),
+	o.minimum_investment, o.maximum_investment, o.profit_sharing_percentage, COALESCE(o.estimated_roi,''),
+	COALESCE(o.location_requirement,''), COALESCE(o.address,''), COALESCE(o.city,''), COALESCE(o.province,''), o.latitude, o.longitude,
+	COALESCE(o.contact_phone,''), COALESCE(o.contact_email,''), COALESCE(o.contact_whatsapp,''), COALESCE(o.website,''),
 	o.is_active, o.is_featured, o.total_outlets, o.year_established, o.created_by,
 	o.created_at, o.updated_at
 FROM outlets o

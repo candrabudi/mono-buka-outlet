@@ -213,3 +213,28 @@ export const ebookCategoryApi = {
   delete: (id) => api.delete(`/ebook-categories/${id}`),
   toggle: (id) => api.patch(`/ebook-categories/${id}/toggle`),
 }
+
+// AI Konsultan Admin
+export const aiApi = {
+  // Knowledge Base
+  listKnowledge: () => api.get('/ai/knowledge'),
+  createKnowledge: (data) => api.post('/ai/knowledge', data),
+  updateKnowledge: (id, data) => api.put(`/ai/knowledge/${id}`, data),
+  deleteKnowledge: (id) => api.delete(`/ai/knowledge/${id}`),
+
+  // Categories
+  listCategories: () => api.get('/ai/categories'),
+  createCategory: (data) => api.post('/ai/categories', data),
+
+  // System Prompts
+  listPrompts: () => api.get('/ai/prompts'),
+  createPrompt: (data) => api.post('/ai/prompts', data),
+  updatePrompt: (id, data) => api.put(`/ai/prompts/${id}`, data),
+
+  // Config
+  getConfig: () => api.get('/ai/config'),
+  updateConfig: (data) => api.put('/ai/config', data),
+
+  // Cache
+  invalidateCache: () => api.post('/ai/cache/invalidate'),
+}

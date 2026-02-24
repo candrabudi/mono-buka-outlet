@@ -11,6 +11,7 @@ import (
 	"github.com/franchise-system/backend/internal/repository/postgres"
 	"github.com/franchise-system/backend/internal/router"
 	"github.com/franchise-system/backend/internal/seeder"
+	"github.com/franchise-system/backend/internal/service/chatbot"
 	"github.com/franchise-system/backend/internal/service/email"
 	"github.com/franchise-system/backend/internal/service/midtrans"
 	"github.com/franchise-system/backend/internal/usecase"
@@ -113,6 +114,9 @@ func main() {
 	dashboardUC := usecase.NewDashboardUseCase(dashboardRepo, db)
 	meetingUC := usecase.NewMeetingUseCase(meetingRepo)
 
+	chatService := chatbot.NewService(db, cfg.OpenAI.APIKey)
+	aiKnowledgeRepo := postgres.NewAIKnowledgeRepo(db)
+
 	handlers := router.Handlers{
 		Auth:      handler.NewAuthHandler(authUC),
 		AdminAuth: handler.NewAdminAuthHandler(adminAuthUC),
@@ -134,6 +138,8 @@ func main() {
 		LocationSub:    handler.NewLocationSubmissionHandler(locationSubRepo),
 		Ebook:          handler.NewEbookHandler(ebookRepo, ebookOrderRepo, settingRepo, midtrans.NewService(settingRepo), cfg.Upload.Dir),
 		EbookCategory:  handler.NewEbookCategoryHandler(ebookCategoryRepo),
+		Chat:           handler.NewChatHandler(chatService),
+		AIAdmin:        handler.NewAIAdminHandler(aiKnowledgeRepo, chatService),
 	}
 
 	if cfg.App.Env == "production" {

@@ -226,6 +226,33 @@ func RegisterPanelRoutes(r *gin.Engine, h Handlers, jwtSecret string) {
 				ebookOrders.PATCH("/:id/approve-payment", h.Ebook.ApprovePayment)
 				ebookOrders.PATCH("/:id/reject-payment", h.Ebook.RejectPayment)
 			}
+
+			// AI Konsultan Settings — master, admin
+			ai := adminProtected.Group("/ai")
+			ai.Use(middleware.RoleAuth(entity.RoleMaster, entity.RoleAdmin))
+			{
+				// Knowledge Base
+				ai.GET("/knowledge", h.AIAdmin.ListKnowledge)
+				ai.POST("/knowledge", h.AIAdmin.CreateKnowledge)
+				ai.PUT("/knowledge/:id", h.AIAdmin.UpdateKnowledge)
+				ai.DELETE("/knowledge/:id", h.AIAdmin.DeleteKnowledge)
+
+				// Categories
+				ai.GET("/categories", h.AIAdmin.ListCategories)
+				ai.POST("/categories", h.AIAdmin.CreateCategory)
+
+				// System Prompts
+				ai.GET("/prompts", h.AIAdmin.ListPrompts)
+				ai.POST("/prompts", h.AIAdmin.CreatePrompt)
+				ai.PUT("/prompts/:id", h.AIAdmin.UpdatePrompt)
+
+				// Config
+				ai.GET("/config", h.AIAdmin.GetConfig)
+				ai.PUT("/config", h.AIAdmin.UpdateConfig)
+
+				// Cache
+				ai.POST("/cache/invalidate", h.AIAdmin.InvalidateCache)
+			}
 		}
 	}
 }

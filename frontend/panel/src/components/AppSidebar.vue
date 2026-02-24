@@ -246,6 +246,17 @@
                 <span class="sidebar-link-text">Pengaturan</span>
               </router-link>
             </li>
+            <li>
+              <router-link to="/ai-settings" class="sidebar-link" :class="{ active: $route.path.startsWith('/ai-settings') }">
+                <span class="sidebar-link-icon">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 2a2 2 0 012 2c0 .74-.4 1.39-1 1.73v.27h1a7 7 0 017 7h.27c.34-.6.99-1 1.73-1a2 2 0 110 4c-.74 0-1.39-.4-1.73-1H21a7 7 0 01-7 7v.27c.6.34 1 .99 1 1.73a2 2 0 11-4 0c0-.74.4-1.39 1-1.73V22a7 7 0 01-7-7h-.27c-.34.6-.99 1-1.73 1a2 2 0 110-4c.74 0 1.39.4 1.73 1H3a7 7 0 017-7V5.73c-.6-.34-1-.99-1-1.73a2 2 0 114 0z" fill="currentColor" class="path-1"/>
+                    <circle cx="12" cy="12" r="3" fill="var(--primary)" class="path-2"/>
+                  </svg>
+                </span>
+                <span class="sidebar-link-text">AI Konsultan</span>
+              </router-link>
+            </li>
           </ul>
         </div>
       </nav>

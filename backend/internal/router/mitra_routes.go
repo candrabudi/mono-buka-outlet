@@ -70,6 +70,12 @@ func RegisterMitraRoutes(r *gin.Engine, h Handlers, jwtSecret string) {
 			mitraProtected.POST("/ebook-orders/:id/cancel", h.Ebook.CancelOrder)
 			mitraProtected.POST("/ebook-orders/:id/upload-proof", h.Ebook.UploadPaymentProof)
 			mitraProtected.POST("/upload", h.Upload.Upload)
+
+			// AI Konsultan
+			mitraProtected.POST("/chat", h.Chat.Chat)
+			mitraProtected.GET("/chat/conversations", h.Chat.GetConversations)
+			mitraProtected.GET("/chat/conversations/:id", h.Chat.GetMessages)
+			mitraProtected.DELETE("/chat/conversations/:id", h.Chat.DeleteConversation)
 		}
 	}
 }

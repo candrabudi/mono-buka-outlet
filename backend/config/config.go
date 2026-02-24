@@ -14,6 +14,7 @@ type Config struct {
 	CORS     CORSConfig
 	Upload   UploadConfig
 	SMTP     SMTPConfig
+	OpenAI   OpenAIConfig
 }
 
 type AppConfig struct {
@@ -56,6 +57,11 @@ type SMTPConfig struct {
 	Password string
 	From     string
 	FromName string
+}
+
+type OpenAIConfig struct {
+	APIKey string
+	Model  string
 }
 
 func Load() (*Config, error) {
@@ -101,6 +107,10 @@ func Load() (*Config, error) {
 			Password: getEnv("SMTP_PASSWORD", ""),
 			From:     getEnv("SMTP_FROM", "noreply@franchise.com"),
 			FromName: getEnv("SMTP_FROM_NAME", "BukaOutlet"),
+		},
+		OpenAI: OpenAIConfig{
+			APIKey: getEnv("OPENAI_API_KEY", ""),
+			Model:  getEnv("OPENAI_MODEL", "gpt-4o"),
 		},
 	}
 

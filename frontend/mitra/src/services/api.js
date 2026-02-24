@@ -104,3 +104,11 @@ export const uploadApi = {
     return api.post('/upload', fd, { headers: { 'Content-Type': 'multipart/form-data' } })
   },
 }
+
+// AI Konsultan
+export const chatApi = {
+  send: (data) => api.post('/chat', data),
+  conversations: () => api.get('/chat/conversations'),
+  messages: (id) => api.get(`/chat/conversations/${id}`),
+  deleteConversation: (id) => api.delete(`/chat/conversations/${id}`),
+}

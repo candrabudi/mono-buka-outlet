@@ -28,6 +28,9 @@
     <button @click="sidebarExpanded = !sidebarExpanded" class="mobile-toggle-btn">
       <i class="ri-menu-line" style="font-size:24px"></i>
     </button>
+
+    <!-- AI Konsultan Chat Widget -->
+    <ChatWidget />
   </div>
 </template>
 
@@ -39,6 +42,7 @@ import { useToastStore } from '../stores/toast'
 import { authApi } from '../services/api'
 import AppSidebar from '../components/AppSidebar.vue'
 import AppHeader from '../components/AppHeader.vue'
+import ChatWidget from '../components/ChatWidget.vue'
 
 const auth = useAuthStore()
 const toast = useToastStore()

@@ -61,6 +61,9 @@ const routes = [
       { path: 'ebook-orders', name: 'EbookOrders', component: () => import('../pages/ebooks/EbookOrderList.vue'), meta: { roles: ['master', 'admin'] } },
       { path: 'ebook-categories', name: 'EbookCategories', component: () => import('../pages/ebooks/EbookCategories.vue'), meta: { roles: ['master', 'admin'] } },
       { path: 'download-requests', name: 'DownloadRequests', component: () => import('../pages/ebooks/DownloadRequests.vue'), meta: { roles: ['master', 'admin'] } },
+
+      // AI Konsultan — master, admin
+      { path: 'ai-settings', name: 'AISettings', component: () => import('../pages/ai/AISettings.vue'), meta: { roles: ['master', 'admin'] } },
     ],
   },
 
