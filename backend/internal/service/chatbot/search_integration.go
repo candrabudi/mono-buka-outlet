@@ -97,85 +97,6 @@ func (s *Service) needsWebSearch(message string) bool {
 	return false
 }
 
-// autoLearnFromSearch saves useful web search results to the knowledge base
-// so the AI learns from previous searches and doesn't need to search again
-func (s *Service) autoLearnFromSearch(query string, results []WebSearchResult) {
-	if len(results) == 0 {
-		return
-	}
-
-	ctx := context.Background()
-
-	// Get or create "Web Search Learning" category
-	categoryID, err := s.getOrCreateSearchCategory(ctx)
-	if err != nil {
-		log.Printf("[AI] Failed to get search category: %v", err)
-		return
-	}
-
-	// Compile results into a single knowledge entry
-	var sb strings.Builder
-	for i, r := range results {
-		if i >= 5 {
-			break // Max 5 results per entry
-		}
-		sb.WriteString(fmt.Sprintf("**%s**\n", r.Title))
-		sb.WriteString(fmt.Sprintf("%s\n", r.Snippet))
-		if r.URL != "" {
-			sb.WriteString(fmt.Sprintf("Sumber: %s\n", r.URL))
-		}
-		sb.WriteString("\n")
-	}
-
-	content := sb.String()
-	if content == "" {
-		return
-	}
-
-	// Check if similar knowledge already exists (by slug match)
-	title := fmt.Sprintf("Web: %s", truncateString(query, 80))
-	slug := slugify(title)
-
-	var existingID uuid.UUID
-	err = s.db.QueryRowContext(ctx,
-		`SELECT id FROM ai_knowledge_base WHERE slug = $1 LIMIT 1`, slug).Scan(&existingID)
-	if err == nil {
-		// Update existing entry with fresh data
-		_, err = s.db.ExecContext(ctx,
-			`UPDATE ai_knowledge_base SET content = $1, updated_at = $2 WHERE id = $3`,
-			content, time.Now(), existingID)
-		if err != nil {
-			log.Printf("[AI] Failed to update learned knowledge: %v", err)
-		} else {
-			log.Printf("[AI] 📚 Updated learned knowledge: %s", title)
-			s.InvalidateCache()
-		}
-		return
-	}
-
-	// Create new knowledge entry
-	keywords := extractKeywords(query)
-	kb := &KnowledgeEntry{
-		ID:         uuid.New(),
-		CategoryID: categoryID,
-		Title:      title,
-		Slug:       slug,
-		Content:    content,
-		Keywords:   keywords,
-		Priority:   1, // Low priority (internal KB takes precedence)
-		IsActive:   true,
-		CreatedAt:  time.Now(),
-		UpdatedAt:  time.Now(),
-	}
-
-	if err := s.saveLearnedKnowledge(ctx, kb); err != nil {
-		log.Printf("[AI] Failed to save learned knowledge: %v", err)
-	} else {
-		log.Printf("[AI] 📚 Saved new learned knowledge: %s", title)
-		s.InvalidateCache() // Refresh cache
-	}
-}
-
 // KnowledgeEntry for auto-learning (simplified)
 type KnowledgeEntry struct {
 	ID         uuid.UUID
@@ -228,6 +149,85 @@ func (s *Service) saveLearnedKnowledge(ctx context.Context, kb *KnowledgeEntry) 
 		kb.CreatedAt, kb.UpdatedAt,
 	)
 	return err
+}
+
+// autoLearnFromWebSearch saves OpenAI web search results (with citations) to the knowledge base
+func (s *Service) autoLearnFromWebSearch(query string, reply string, annotations []SearchAnnotation) {
+	if reply == "" {
+		return
+	}
+
+	ctx := context.Background()
+
+	// Get or create "Web Search Learning" category
+	categoryID, err := s.getOrCreateSearchCategory(ctx)
+	if err != nil {
+		log.Printf("[AI] Failed to get search category: %v", err)
+		return
+	}
+
+	// Compile the reply + citations into a knowledge entry
+	var sb strings.Builder
+	sb.WriteString(reply)
+
+	if len(annotations) > 0 {
+		sb.WriteString("\n\n---\n**Sumber Referensi:**\n")
+		seen := map[string]bool{}
+		for _, ann := range annotations {
+			if ann.Type == "url_citation" && ann.URL != "" && !seen[ann.URL] {
+				seen[ann.URL] = true
+				title := ann.Title
+				if title == "" {
+					title = ann.URL
+				}
+				sb.WriteString(fmt.Sprintf("- [%s](%s)\n", title, ann.URL))
+			}
+		}
+	}
+
+	content := sb.String()
+	title := fmt.Sprintf("Web: %s", truncateString(query, 80))
+	slug := slugify(title)
+	keywords := extractKeywords(query)
+
+	// Check if exists, update or create
+	var existingID uuid.UUID
+	err = s.db.QueryRowContext(ctx,
+		`SELECT id FROM ai_knowledge_base WHERE slug = $1 LIMIT 1`, slug).Scan(&existingID)
+	if err == nil {
+		// Update existing
+		_, err = s.db.ExecContext(ctx,
+			`UPDATE ai_knowledge_base SET content = $1, updated_at = $2 WHERE id = $3`,
+			content, time.Now(), existingID)
+		if err != nil {
+			log.Printf("[AI] Failed to update learned knowledge: %v", err)
+		} else {
+			log.Printf("[AI] 📚 Updated learned knowledge from web search: %s", title)
+			s.InvalidateCache()
+		}
+		return
+	}
+
+	// Create new
+	kb := &KnowledgeEntry{
+		ID:         uuid.New(),
+		CategoryID: categoryID,
+		Title:      title,
+		Slug:       slug,
+		Content:    content,
+		Keywords:   keywords,
+		Priority:   1,
+		IsActive:   true,
+		CreatedAt:  time.Now(),
+		UpdatedAt:  time.Now(),
+	}
+
+	if err := s.saveLearnedKnowledge(ctx, kb); err != nil {
+		log.Printf("[AI] Failed to save learned knowledge: %v", err)
+	} else {
+		log.Printf("[AI] 📚 Saved new learned knowledge from web search: %s", title)
+		s.InvalidateCache()
+	}
 }
 
 // ──────────────────────────────────────────────────────────────

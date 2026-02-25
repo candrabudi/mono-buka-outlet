@@ -20,11 +20,10 @@ import (
 // ──────────────────────────────────────────────────────────────
 
 type Service struct {
-	chatRepo  *postgres.ChatRepo
-	kbRepo    *postgres.AIKnowledgeRepo
-	db        *sql.DB
-	openai    *OpenAIClient
-	webSearch *WebSearcher
+	chatRepo *postgres.ChatRepo
+	kbRepo   *postgres.AIKnowledgeRepo
+	db       *sql.DB
+	openai   *OpenAIClient
 
 	// Fallback API key from .env (used if DB has no key)
 	fallbackAPIKey string
@@ -44,7 +43,6 @@ func NewService(db *sql.DB, openaiKey string) *Service {
 		kbRepo:         postgres.NewAIKnowledgeRepo(db),
 		db:             db,
 		openai:         NewOpenAIClient(openaiKey, "gpt-4o"),
-		webSearch:      NewWebSearcher(),
 		fallbackAPIKey: openaiKey,
 		cacheTTL:       5 * time.Minute,
 	}
@@ -95,30 +93,19 @@ func (s *Service) Chat(userID uuid.UUID, req entity.ChatRequest) (*entity.ChatRe
 	}
 	s.chatRepo.SaveMessage(userMsg)
 
-	// 3. Web search (if needed)
-	var searchResults []WebSearchResult
-	if s.needsWebSearch(req.Message) {
-		log.Printf("[AI] 🔍 Web search triggered for: %s", req.Message)
-		results, err := s.webSearch.Search(req.Message)
-		if err == nil && len(results) > 0 {
-			searchResults = results
-			log.Printf("[AI] 🌐 Found %d web results", len(results))
-			// Auto-learn: save useful results to knowledge base
-			go s.autoLearnFromSearch(req.Message, results)
-		}
-	}
+	// 3. Detect if web search is needed
+	useWebSearch := s.needsWebSearch(req.Message)
 
-	// 4. Build GPT messages array
-	gptMessages, err := s.buildGPTMessages(convID, userID, req.Message, searchResults)
+	// 4. Build GPT messages array (without DuckDuckGo results — OpenAI will search itself)
+	gptMessages, err := s.buildGPTMessages(convID, userID, req.Message)
 	if err != nil {
 		return nil, fmt.Errorf("failed to build messages: %w", err)
 	}
 
-	// 4. Call OpenAI
+	// 5. Load config overrides
 	temperature := 0.7
 	maxTokens := 2048
 
-	// Load config overrides
 	if t, err := s.kbRepo.GetConfig("openai_temperature"); err == nil {
 		fmt.Sscanf(t, "%f", &temperature)
 	}
@@ -126,18 +113,50 @@ func (s *Service) Chat(userID uuid.UUID, req entity.ChatRequest) (*entity.ChatRe
 		fmt.Sscanf(m, "%d", &maxTokens)
 	}
 
-	gptResp, err := s.openai.ChatCompletion(gptMessages, temperature, maxTokens)
-	if err != nil {
-		log.Printf("[AI] OpenAI error: %v", err)
-		return s.fallbackResponse(convID, userID, req.Message)
+	// 6. Call OpenAI — with or without web search
+	var gptResp *OpenAIResponse
+	var reply string
+
+	if useWebSearch {
+		log.Printf("[AI] 🔍 Using OpenAI web search for: %s", req.Message)
+
+		// Use Responses API with web_search_preview
+		searchResp, annotations, err := s.openai.ChatCompletionWithSearch(gptMessages, temperature)
+		if err != nil {
+			log.Printf("[AI] Web search API error, falling back to regular: %v", err)
+			// Fallback to regular completion
+			gptResp, err = s.openai.ChatCompletion(gptMessages, temperature, maxTokens)
+			if err != nil {
+				log.Printf("[AI] OpenAI error: %v", err)
+				return s.fallbackResponse(convID, userID, req.Message)
+			}
+			reply = s.openai.GetReply(gptResp)
+		} else {
+			gptResp = searchResp
+			reply = s.openai.GetReply(searchResp)
+
+			// Log search citations
+			if len(annotations) > 0 {
+				log.Printf("[AI] 🌐 Web search returned %d citations", len(annotations))
+				// Auto-learn: save search results to knowledge base
+				go s.autoLearnFromWebSearch(req.Message, reply, annotations)
+			}
+		}
+	} else {
+		// Regular chat completion (no web search)
+		gptResp, err = s.openai.ChatCompletion(gptMessages, temperature, maxTokens)
+		if err != nil {
+			log.Printf("[AI] OpenAI error: %v", err)
+			return s.fallbackResponse(convID, userID, req.Message)
+		}
+		reply = s.openai.GetReply(gptResp)
 	}
 
-	reply := s.openai.GetReply(gptResp)
 	if reply == "" {
 		return s.fallbackResponse(convID, userID, req.Message)
 	}
 
-	// 5. Save assistant response
+	// 7. Save assistant response
 	tokensUsed := 0
 	if gptResp != nil {
 		tokensUsed = gptResp.Usage.TotalTokens
@@ -151,7 +170,7 @@ func (s *Service) Chat(userID uuid.UUID, req entity.ChatRequest) (*entity.ChatRe
 	}
 	s.chatRepo.SaveMessage(assistantMsg)
 
-	// 6. Generate quick actions
+	// 8. Generate quick actions
 	quickActions := s.generateQuickActions(reply)
 
 	return &entity.ChatResponse{
@@ -165,7 +184,7 @@ func (s *Service) Chat(userID uuid.UUID, req entity.ChatRequest) (*entity.ChatRe
 // BUILD GPT MESSAGES
 // ──────────────────────────────────────────────────────────────
 
-func (s *Service) buildGPTMessages(convID, userID uuid.UUID, currentMessage string, searchResults []WebSearchResult) ([]OpenAIMessage, error) {
+func (s *Service) buildGPTMessages(convID, userID uuid.UUID, currentMessage string) ([]OpenAIMessage, error) {
 	messages := []OpenAIMessage{}
 
 	// 1. System prompt (from database)
@@ -191,17 +210,6 @@ func (s *Service) buildGPTMessages(convID, userID uuid.UUID, currentMessage stri
 			Role:    "system",
 			Content: "## DATA BISNIS REAL-TIME\n\n" + liveData,
 		})
-	}
-
-	// 4. Web search results (if available)
-	if len(searchResults) > 0 {
-		webContext := FormatSearchResults(searchResults)
-		if webContext != "" {
-			messages = append(messages, OpenAIMessage{
-				Role:    "system",
-				Content: webContext,
-			})
-		}
 	}
 
 	// 5. Conversation history (last 10 messages for context)
