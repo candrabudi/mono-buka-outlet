@@ -20,10 +20,11 @@ import (
 // ──────────────────────────────────────────────────────────────
 
 type Service struct {
-	chatRepo *postgres.ChatRepo
-	kbRepo   *postgres.AIKnowledgeRepo
-	db       *sql.DB
-	openai   *OpenAIClient
+	chatRepo  *postgres.ChatRepo
+	kbRepo    *postgres.AIKnowledgeRepo
+	db        *sql.DB
+	openai    *OpenAIClient
+	webSearch *WebSearcher
 
 	// Fallback API key from .env (used if DB has no key)
 	fallbackAPIKey string
@@ -43,6 +44,7 @@ func NewService(db *sql.DB, openaiKey string) *Service {
 		kbRepo:         postgres.NewAIKnowledgeRepo(db),
 		db:             db,
 		openai:         NewOpenAIClient(openaiKey, "gpt-4o"),
+		webSearch:      NewWebSearcher(),
 		fallbackAPIKey: openaiKey,
 		cacheTTL:       5 * time.Minute,
 	}
@@ -93,8 +95,21 @@ func (s *Service) Chat(userID uuid.UUID, req entity.ChatRequest) (*entity.ChatRe
 	}
 	s.chatRepo.SaveMessage(userMsg)
 
-	// 3. Build GPT messages array
-	gptMessages, err := s.buildGPTMessages(convID, userID, req.Message)
+	// 3. Web search (if needed)
+	var searchResults []WebSearchResult
+	if s.needsWebSearch(req.Message) {
+		log.Printf("[AI] 🔍 Web search triggered for: %s", req.Message)
+		results, err := s.webSearch.Search(req.Message)
+		if err == nil && len(results) > 0 {
+			searchResults = results
+			log.Printf("[AI] 🌐 Found %d web results", len(results))
+			// Auto-learn: save useful results to knowledge base
+			go s.autoLearnFromSearch(req.Message, results)
+		}
+	}
+
+	// 4. Build GPT messages array
+	gptMessages, err := s.buildGPTMessages(convID, userID, req.Message, searchResults)
 	if err != nil {
 		return nil, fmt.Errorf("failed to build messages: %w", err)
 	}
@@ -150,7 +165,7 @@ func (s *Service) Chat(userID uuid.UUID, req entity.ChatRequest) (*entity.ChatRe
 // BUILD GPT MESSAGES
 // ──────────────────────────────────────────────────────────────
 
-func (s *Service) buildGPTMessages(convID, userID uuid.UUID, currentMessage string) ([]OpenAIMessage, error) {
+func (s *Service) buildGPTMessages(convID, userID uuid.UUID, currentMessage string, searchResults []WebSearchResult) ([]OpenAIMessage, error) {
 	messages := []OpenAIMessage{}
 
 	// 1. System prompt (from database)
@@ -178,7 +193,18 @@ func (s *Service) buildGPTMessages(convID, userID uuid.UUID, currentMessage stri
 		})
 	}
 
-	// 4. Conversation history (last 10 messages for context)
+	// 4. Web search results (if available)
+	if len(searchResults) > 0 {
+		webContext := FormatSearchResults(searchResults)
+		if webContext != "" {
+			messages = append(messages, OpenAIMessage{
+				Role:    "system",
+				Content: webContext,
+			})
+		}
+	}
+
+	// 5. Conversation history (last 10 messages for context)
 	history, _ := s.chatRepo.GetRecentContext(convID, 10)
 	for _, msg := range history {
 		role := "user"
@@ -191,7 +217,7 @@ func (s *Service) buildGPTMessages(convID, userID uuid.UUID, currentMessage stri
 		})
 	}
 
-	// 5. Current user message
+	// 6. Current user message
 	messages = append(messages, OpenAIMessage{
 		Role:    "user",
 		Content: currentMessage,
@@ -231,26 +257,46 @@ func (s *Service) defaultSystemPrompt() string {
 
 ## IDENTITAS
 - Nama: AI Konsultan BukaOutlet
-- Fungsi: Konsultan bisnis khusus kemitraan outlet
+- Fungsi: Konsultan bisnis & franchise, khusus kemitraan outlet
 - Bahasa: Indonesia (formal tapi ramah)
+- Keahlian: Franchise, kemitraan outlet, bisnis F&B, bisnis retail, investasi waralaba
 
-## ATURAN KETAT
-1. HANYA menjawab pertanyaan seputar: kemitraan outlet, bisnis outlet, ebook bisnis, pembayaran, dan topik yang ada di knowledge base
-2. Jika ditanya di luar topik bisnis outlet, TOLAK dengan sopan dan arahkan kembali ke topik yang relevan
-3. JANGAN pernah memberikan informasi yang tidak ada di knowledge base atau data bisnis
-4. JANGAN membahas politik, agama, SARA, atau topik sensitif
-5. Gunakan data real dari "DATA BISNIS REAL-TIME" untuk memberikan informasi akurat
+## ATURAN
+1. UTAMAKAN menjawab dari KNOWLEDGE BASE dan DATA BISNIS REAL-TIME untuk pertanyaan spesifik tentang BukaOutlet
+2. Untuk pertanyaan umum seputar FRANCHISE, BISNIS, KEMITRAAN, dan INVESTASI OUTLET: boleh menjawab dari pengetahuan umum dan HASIL PENCARIAN WEB
+3. Jika ada HASIL PENCARIAN WEB, gunakan informasi tersebut sebagai referensi tambahan dan sebutkan sumbernya
+4. JANGAN membahas topik di luar konteks bisnis/franchise (politik, agama, SARA, hiburan, dll). Tolak dengan sopan dan arahkan ke topik franchise
+5. Gunakan data real dari "DATA BISNIS REAL-TIME" untuk informasi spesifik BukaOutlet
 6. Jika tidak yakin, sarankan user untuk menghubungi customer service
-7. Selalu format jawaban dengan markdown yang rapi (gunakan heading, list, bold)
+7. Selalu format jawaban dengan markdown yang rapi (heading, list, bold)
 8. Berikan jawaban yang informatif, terstruktur, dan mudah dipahami
 9. Selalu akhiri dengan saran atau pertanyaan lanjutan
 10. JANGAN membuat data palsu atau mengarang informasi
+
+## TOPIK YANG BOLEH DIJAWAB
+- Kemitraan & franchise outlet (BukaOutlet maupun umum)
+- Tips memulai bisnis franchise
+- Cara memilih franchise yang tepat
+- Analisis investasi franchise
+- Tren bisnis franchise di Indonesia
+- Regulasi & legalitas franchise
+- Strategi pemasaran untuk outlet/franchise
+- Manajemen operasional outlet
+- Ebook bisnis yang tersedia di platform
+- Pembayaran dan keuangan kemitraan
+
+## TOPIK YANG DITOLAK
+- Politik, agama, SARA
+- Hiburan, game, olahraga (kecuali bisnis terkait)
+- Kesehatan, medis
+- Topik personal yang tidak terkait bisnis
 
 ## GAYA KOMUNIKASI
 - Ramah, profesional, dan supportive
 - Gunakan emoji untuk membuat percakapan lebih friendly
 - Berikan jawaban yang detail tapi tidak bertele-tele
-- Selalu dorong user untuk mengambil action (daftar, lihat outlet, beli ebook, dll)`
+- Selalu dorong user untuk mengambil action (daftar, lihat outlet, beli ebook, dll)
+- Jika menjawab dari web search, selalu cantumkan "📌 Sumber: ..." di akhir`
 }
 
 // ──────────────────────────────────────────────────────────────
