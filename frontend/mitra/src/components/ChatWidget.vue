@@ -381,29 +381,56 @@ function renderMarkdown(text) {
   let html = ''
   let inUl = false, inOl = false
 
+  // Look ahead helper: is the next non-empty line a list item of the same type?
+  function nextIsOl(startIdx) {
+    for (let j = startIdx + 1; j < lines.length; j++) {
+      const l = lines[j].trim()
+      if (l === '') continue  // skip blanks
+      return /^\d+\.\s/.test(l)
+    }
+    return false
+  }
+  function nextIsUl(startIdx) {
+    for (let j = startIdx + 1; j < lines.length; j++) {
+      const l = lines[j].trim()
+      if (l === '') continue
+      return /^[-•] /.test(l)
+    }
+    return false
+  }
+
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i]
     const ulMatch = line.match(/^\s*[-•] (.+)/)
     const olMatch = line.match(/^\s*(\d+)\.\s(.+)/)
 
-    if (ulMatch) {
+    if (olMatch) {
+      if (inUl) { html += '</ul>'; inUl = false }
+      if (!inOl) { html += '<ol>'; inOl = true }
+      html += `<li value="${olMatch[1]}">${olMatch[2]}</li>`
+    } else if (ulMatch) {
       if (inOl) { html += '</ol>'; inOl = false }
       if (!inUl) { html += '<ul>'; inUl = true }
       html += `<li>${ulMatch[1]}</li>`
-    } else if (olMatch) {
-      if (inUl) { html += '</ul>'; inUl = false }
-      if (!inOl) { html += '<ol>'; inOl = true }
-      html += `<li>${olMatch[2]}</li>`
-    } else {
-      if (inUl) { html += '</ul>'; inUl = false }
-      if (inOl) { html += '</ol>'; inOl = false }
-      if (line.trim() === '') {
-        html += '<br>'
-      } else if (line.startsWith('<')) {
-        html += line
+    } else if (line.trim() === '') {
+      // Blank line: don't break list if next line continues it
+      if (inOl && nextIsOl(i)) {
+        // stay in ol, skip blank
+      } else if (inUl && nextIsUl(i)) {
+        // stay in ul, skip blank
       } else {
-        html += `<p>${line}</p>`
+        if (inOl) { html += '</ol>'; inOl = false }
+        if (inUl) { html += '</ul>'; inUl = false }
+        html += '<br>'
       }
+    } else if (inOl || inUl) {
+      // Sub-content inside a list item (indented text, etc.)
+      // Append to the last <li> by wrapping in a <br> + inline
+      html += `<br><span class="chat-li-sub">${line}</span>`
+    } else if (line.startsWith('<')) {
+      html += line
+    } else {
+      html += `<p>${line}</p>`
     }
   }
   if (inUl) html += '</ul>'
@@ -1175,28 +1202,27 @@ onMounted(() => {
 
 .chat-msg-content :deep(ol) {
   margin: 6px 0;
-  padding-left: 6px;
-  list-style: none;
-  counter-reset: ol-counter;
+  padding-left: 24px;
+  list-style: decimal;
 }
 
 .chat-msg-content :deep(ol li) {
-  counter-increment: ol-counter;
   position: relative;
-  padding-left: 22px;
   margin-bottom: 4px;
   font-size: 13px;
   line-height: 1.55;
 }
 
-.chat-msg-content :deep(ol li)::before {
-  content: counter(ol-counter) '.';
-  position: absolute;
-  left: 0;
-  top: 0;
+.chat-msg-content :deep(ol li)::marker {
   font-weight: 700;
-  font-size: 13px;
   color: #E8702A !important;
+}
+
+.chat-msg-content :deep(.chat-li-sub) {
+  display: block;
+  font-size: 12.5px;
+  color: #6B7280 !important;
+  padding-left: 4px;
 }
 
 .chat-msg-content :deep(ul li) {
