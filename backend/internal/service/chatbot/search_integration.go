@@ -21,13 +21,27 @@ import (
 func (s *Service) needsWebSearch(message string) bool {
 	lower := strings.ToLower(message)
 
+	// Always-search triggers — these ALWAYS trigger web search
+	alwaysTriggers := []string{
+		"viral", "trending", "tren", "populer", "hits",
+		"lagi booming", "lagi rame", "lagi ngetren", "lagi hype",
+		"terbaru", "terkini", "saat ini", "sekarang",
+		"di luar sana", "di pasaran", "di indonesia",
+		"rekomendasi", "rekomendasikan",
+	}
+	for _, trigger := range alwaysTriggers {
+		if strings.Contains(lower, trigger) {
+			return true
+		}
+	}
+
 	// Direct triggers — user explicitly asking for external info
 	directTriggers := []string{
 		"cari di internet", "cari di web", "cari online", "search",
-		"info terbaru", "berita terbaru", "update terbaru", "tren terbaru",
+		"info terbaru", "berita terbaru", "update terbaru",
 		"data terbaru", "statistik", "riset", "penelitian",
 		"menurut", "berdasarkan data", "sumber",
-		"di indonesia", "di dunia", "di asia", "secara global",
+		"di dunia", "di asia", "secara global",
 		"tahun 2024", "tahun 2025", "tahun 2026",
 	}
 	for _, trigger := range directTriggers {
@@ -38,7 +52,7 @@ func (s *Service) needsWebSearch(message string) bool {
 
 	// Topic-based triggers — franchise/business questions likely needing external info
 	topicTriggers := []string{
-		"tren franchise", "franchise terbaik", "franchise terlaris",
+		"franchise terbaik", "franchise terlaris",
 		"franchise murah", "franchise modal kecil",
 		"tips franchise", "tips bisnis", "tips usaha",
 		"cara memulai franchise", "cara sukses franchise",
@@ -49,7 +63,7 @@ func (s *Service) needsWebSearch(message string) bool {
 		"franchise retail", "franchise jasa",
 		"roi franchise", "bep franchise",
 		"waralaba", "kemitraan terbaru",
-		"contoh franchise", "franchise populer", "franchise sukses",
+		"contoh franchise", "franchise sukses",
 		"apa itu franchise", "pengertian franchise", "definisi franchise",
 		"perbedaan franchise", "jenis franchise", "tipe franchise",
 		"strategi pemasaran", "marketing outlet",
@@ -66,8 +80,9 @@ func (s *Service) needsWebSearch(message string) bool {
 		"bagaimana cara", "apa saja", "berapa biaya",
 		"siapa yang", "dimana bisa", "kapan sebaiknya",
 		"apakah worth it", "apakah menguntungkan",
-		"rekomendasi", "saran untuk", "contoh",
+		"saran untuk", "contoh",
 		"perbandingan", "dibandingkan", "vs",
+		"apa yang lagi", "yang lagi", "lagi apa",
 	}
 	franchiseContext := []string{
 		"franchise", "bisnis", "usaha", "outlet", "kemitraan",

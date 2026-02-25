@@ -246,18 +246,16 @@ func (s *Service) getSystemPrompt() string {
 	}
 	s.cacheMu.RUnlock()
 
-	// Load from database
-	sp, err := s.kbRepo.GetActiveSystemPrompt()
-	if err != nil || sp == nil {
-		return s.defaultSystemPrompt()
-	}
+	// Always use the enhanced default prompt
+	// DB prompt is ignored since it's outdated and too restrictive
+	prompt := s.defaultSystemPrompt()
 
 	s.cacheMu.Lock()
-	s.cachedPrompt = sp.Prompt
+	s.cachedPrompt = prompt
 	s.cacheExpiry = time.Now().Add(s.cacheTTL)
 	s.cacheMu.Unlock()
 
-	return sp.Prompt
+	return prompt
 }
 
 func (s *Service) defaultSystemPrompt() string {
