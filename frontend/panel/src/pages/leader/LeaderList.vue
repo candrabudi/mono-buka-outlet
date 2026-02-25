@@ -135,16 +135,35 @@
                 <div v-if="formErrors.phone" class="mitra-field-error">{{ formErrors.phone }}</div>
               </div>
             </div>
-            <div class="mitra-form-group">
-              <label>Password {{ editItem ? '(kosongkan jika tidak ingin ubah)' : '' }} <span v-if="!editItem" class="req">*</span></label>
-              <div class="mitra-pw-wrap">
-                <input v-model="form.password" :type="showPassword ? 'text' : 'password'" class="mitra-input mitra-pw-input" :class="{ 'is-error': formErrors.password }" placeholder="Minimal 6 karakter" />
-                <button type="button" class="mitra-pw-toggle" @click="showPassword = !showPassword" tabindex="-1">
-                  <svg v-if="!showPassword" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                  <svg v-else width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
-                </button>
+            <div class="mitra-form-row">
+              <div class="mitra-form-group">
+                <label>Password {{ editItem ? '(kosongkan jika tidak ingin ubah)' : '' }} <span v-if="!editItem" class="req">*</span></label>
+                <div class="mitra-pw-wrap">
+                  <input v-model="form.password" :type="showPassword ? 'text' : 'password'" class="mitra-input mitra-pw-input" :class="{ 'is-error': formErrors.password }" placeholder="Minimal 8 karakter" />
+                  <button type="button" class="mitra-pw-toggle" @click="showPassword = !showPassword" tabindex="-1">
+                    <svg v-if="!showPassword" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                    <svg v-else width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                  </button>
+                </div>
+                <div v-if="formErrors.password" class="mitra-field-error">{{ formErrors.password }}</div>
               </div>
-              <div v-if="formErrors.password" class="mitra-field-error">{{ formErrors.password }}</div>
+              <div class="mitra-form-group">
+                <label>Konfirmasi Password <span v-if="!editItem" class="req">*</span></label>
+                <div class="mitra-pw-wrap">
+                  <input v-model="form.confirm_password" :type="showConfirmPassword ? 'text' : 'password'" class="mitra-input mitra-pw-input" :class="{ 'is-error': formErrors.confirm_password }" placeholder="Ulangi password" />
+                  <button type="button" class="mitra-pw-toggle" @click="showConfirmPassword = !showConfirmPassword" tabindex="-1">
+                    <svg v-if="!showConfirmPassword" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                    <svg v-else width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                  </button>
+                </div>
+                <div v-if="formErrors.confirm_password" class="mitra-field-error">{{ formErrors.confirm_password }}</div>
+              </div>
+            </div>
+            <div v-if="form.password" class="mitra-pw-hints">
+              <div class="pw-hint" :class="{ 'pw-ok': form.password.length >= 8 }">✓ Minimal 8 karakter</div>
+              <div class="pw-hint" :class="{ 'pw-ok': /[A-Z]/.test(form.password) }">✓ Huruf besar</div>
+              <div class="pw-hint" :class="{ 'pw-ok': /[a-z]/.test(form.password) }">✓ Huruf kecil</div>
+              <div class="pw-hint" :class="{ 'pw-ok': /[0-9]/.test(form.password) }">✓ Angka</div>
             </div>
             <div class="mitra-modal-footer">
               <button type="button" @click="closeModal" class="btn btn-secondary">Batal</button>
@@ -197,8 +216,9 @@ const deleteTarget = ref(null)
 const deleting = ref(false)
 const searchQuery = ref('')
 const showPassword = ref(false)
+const showConfirmPassword = ref(false)
 
-const form = reactive({ name: '', email: '', phone: '', password: '' })
+const form = reactive({ name: '', email: '', phone: '', password: '', confirm_password: '' })
 const formErrors = reactive({})
 
 const avatarGradients = [
@@ -253,17 +273,19 @@ async function loadMitras() {
 
 function openCreate() {
   editItem.value = null
-  Object.assign(form, { name: '', email: '', phone: '', password: '' })
+  Object.assign(form, { name: '', email: '', phone: '', password: '', confirm_password: '' })
   Object.keys(formErrors).forEach(k => delete formErrors[k])
   showPassword.value = false
+  showConfirmPassword.value = false
   showModal.value = true
 }
 
 function openEdit(m) {
   editItem.value = m
-  Object.assign(form, { name: m.name, email: m.email, phone: m.phone, password: '' })
+  Object.assign(form, { name: m.name, email: m.email, phone: m.phone, password: '', confirm_password: '' })
   Object.keys(formErrors).forEach(k => delete formErrors[k])
   showPassword.value = false
+  showConfirmPassword.value = false
   showModal.value = true
 }
 
@@ -277,12 +299,34 @@ function validate() {
   if (!form.name?.trim()) formErrors.name = 'Nama wajib diisi'
   if (!form.email?.trim()) formErrors.email = 'Email wajib diisi'
   if (!form.phone?.trim()) formErrors.phone = 'No. handphone wajib diisi'
-  if (!editItem.value && (!form.password || form.password.length < 6)) {
-    formErrors.password = 'Password minimal 6 karakter'
+
+  // Password validation (required on create, optional on edit)
+  const needPassword = !editItem.value
+  const hasPassword = form.password && form.password.length > 0
+
+  if (needPassword && !hasPassword) {
+    formErrors.password = 'Password wajib diisi'
   }
-  if (form.password && form.password.length > 0 && form.password.length < 6) {
-    formErrors.password = 'Password minimal 6 karakter'
+  if (hasPassword) {
+    const pwErrors = []
+    if (form.password.length < 8) pwErrors.push('minimal 8 karakter')
+    if (!/[A-Z]/.test(form.password)) pwErrors.push('huruf besar')
+    if (!/[a-z]/.test(form.password)) pwErrors.push('huruf kecil')
+    if (!/[0-9]/.test(form.password)) pwErrors.push('angka')
+    if (pwErrors.length) {
+      formErrors.password = 'Password harus mengandung: ' + pwErrors.join(', ')
+    }
   }
+
+  // Confirm password validation
+  if (needPassword || hasPassword) {
+    if (!form.confirm_password) {
+      formErrors.confirm_password = 'Konfirmasi password wajib diisi'
+    } else if (form.password !== form.confirm_password) {
+      formErrors.confirm_password = 'Konfirmasi password tidak cocok'
+    }
+  }
+
   return Object.keys(formErrors).length === 0
 }
 
@@ -298,7 +342,7 @@ async function handleSave() {
     } else {
       const { data } = await userApi.create({
         name: form.name, email: form.email, phone: form.phone,
-        password: form.password, role: 'leader',
+        password: form.password, confirm_password: form.confirm_password, role: 'leader',
       })
       toast.success(data.message || 'Leader berhasil ditambah')
     }
@@ -550,6 +594,17 @@ async function doDelete() {
 .btn-danger:disabled { opacity: 0.6; cursor: not-allowed; }
 .spin-icon { animation: spin 0.8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg) } }
+
+/* ═══ PASSWORD HINTS ═══ */
+.mitra-pw-hints {
+  display: flex; gap: 12px; flex-wrap: wrap;
+  padding: 10px 0 0;
+}
+.pw-hint {
+  font-size: 0.72rem; color: #94a3b8; font-weight: 500;
+  transition: color 0.2s;
+}
+.pw-hint.pw-ok { color: #22c55e; }
 
 @media (max-width: 768px) {
   .mitra-hero { padding: 24px 20px 18px; }
