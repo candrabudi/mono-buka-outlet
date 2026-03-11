@@ -8,7 +8,7 @@
           <p class="ps-hero-sub">Kelola kemitraan, pembayaran, dan perkembangan</p>
         </div>
         <button @click="openCreate" class="ps-btn-primary">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          <Plus :size="16" />
           Buat Partnership
         </button>
       </div>
@@ -23,9 +23,13 @@
     <!-- Toolbar -->
     <div class="ps-toolbar">
       <div class="ps-search-wrap">
-        <svg class="ps-search-ico" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <Search class="ps-search-ico" :size="16" color="#94a3b8" />
         <input v-model="search" class="ps-search" placeholder="Cari nama mitra..." />
       </div>
+      <button @click="syncInvoiceStatuses" class="ps-sync-btn" :disabled="syncingAll" title="Sinkronkan status invoice pending dengan Midtrans">
+        <svg :class="{ 'ps-spin': syncingAll }" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 12a9 9 0 1 1-6.219-8.56" stroke-linecap="round"/></svg>
+        {{ syncingAll ? 'Syncing...' : 'Sync Invoice' }}
+      </button>
     </div>
 
     <!-- Table -->
@@ -34,7 +38,7 @@
         <thead>
           <tr>
             <th>Mitra</th>
-            <th>Leader</th>
+            <th>Affiliator</th>
             <th>Outlet & Paket</th>
             <th>Pembayaran</th>
             <th>Progress</th>
@@ -54,8 +58,8 @@
               </div>
             </td>
             <td>
-              <div class="ps-lead-cell">{{ p.leader?.name || '-' }}</div>
-              <div class="ps-lead-phone">{{ p.leader?.email || '' }}</div>
+              <div class="ps-lead-cell">{{ p.affiliator?.name || '-' }}</div>
+              <div class="ps-lead-phone">{{ p.affiliator?.email || '' }}</div>
             </td>
             <td>
               <div class="ps-lead-cell">{{ p.outlet?.name || '-' }}</div>
@@ -73,8 +77,9 @@
                 </div>
                 <div class="ps-pay-footer">
                   <span class="ps-pay-pct">{{ payPercent(p) }}%</span>
+                  <span v-if="expiredCount(p)" class="ps-expired-tag">{{ expiredCount(p) }} expired</span>
                   <a v-if="latestPayLink(p)" :href="latestPayLink(p)" target="_blank" class="ps-pay-link" title="Buka link pembayaran">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                    <ExternalLink :size="12" />
                     Bayar
                   </a>
                 </div>
@@ -105,22 +110,22 @@
           <div class="ps-modal-head">
             <div class="ps-modal-title-group">
               <div class="ps-modal-icon">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                <Users :size="20" />
               </div>
               <h3>Buat Partnership Baru</h3>
             </div>
-            <button @click="showModal=false" class="ps-modal-x">&times;</button>
+            <button @click="showModal=false" class="ps-modal-x"><X :size="18" /></button>
           </div>
           <form @submit.prevent="create" class="ps-modal-body">
             <div class="ps-fg">
-              <label>Pilih Leader <span class="req">*</span></label>
-              <select v-model="form.leader_id" class="ps-input" required>
-                <option value="">— Pilih Leader —</option>
-                <option v-for="l in leaders" :key="l.id" :value="l.id">
-                  {{ l.name }} — {{ l.email }}
+              <label>Pilih Affiliator <span class="req">*</span></label>
+              <select v-model="form.affiliator_id" class="ps-input" required>
+                <option value="">— Pilih Affiliator —</option>
+                <option v-for="a in affiliators" :key="a.id" :value="a.id">
+                  {{ a.name }} — {{ a.email }}
                 </option>
               </select>
-              <div class="ps-field-hint">Leader yang akan menangani mitra ini</div>
+              <div class="ps-field-hint">Affiliator yang mereferensikan mitra ini</div>
             </div>
 
             <div class="ps-fg">
@@ -171,6 +176,7 @@
 
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
+import { Plus, Search, ExternalLink, Users, X } from 'lucide-vue-next'
 import { partnershipApi, userApi, outletApi, outletPackageApi, invoiceApi } from '../../services/api'
 import { useToastStore } from '../../stores/toast'
 
@@ -180,13 +186,14 @@ const total = ref(0)
 const search = ref('')
 const showModal = ref(false)
 const saving = ref(false)
-const form = reactive({ leader_id: '', mitra_id: '', outlet_id: '', package_id: '' })
+const form = reactive({ affiliator_id: '', mitra_id: '', outlet_id: '', package_id: '' })
 
-const leaders = ref([])
+const affiliators = ref([])
 const mitras = ref([])
 const outlets = ref([])
 const packages = ref([])
 const loadingPkgs = ref(false)
+const syncingAll = ref(false)
 
 const avatarGradients = [
   'linear-gradient(135deg, #667eea, #764ba2)',
@@ -218,6 +225,10 @@ function latestPayLink(p) {
   const pending = invs.find(i => i.status === 'PENDING' && i.midtrans_redirect_url)
   return pending?.midtrans_redirect_url || ''
 }
+function expiredCount(p) {
+  const invs = invoiceMap.value[p.id] || []
+  return invs.filter(i => i.status === 'EXPIRED').length
+}
 
 const filtered = computed(() => {
   const q = search.value.toLowerCase().trim()
@@ -225,20 +236,20 @@ const filtered = computed(() => {
   return partnerships.value.filter(p =>
     (p.mitra?.name||'').toLowerCase().includes(q) ||
     (p.mitra?.email||'').toLowerCase().includes(q) ||
-    (p.leader?.name||'').toLowerCase().includes(q) ||
+    (p.affiliator?.name||'').toLowerCase().includes(q) ||
     (p.outlet?.name||'').toLowerCase().includes(q)
   )
 })
 
 onMounted(async () => {
-  loadPartnerships()
+  await loadPartnerships()
   try {
-    const [leaderRes, mitraRes, outletRes] = await Promise.all([
-      userApi.list({ role: 'leader', limit: 100 }),
+    const [affiliatorRes, mitraRes, outletRes] = await Promise.all([
+      userApi.list({ role: 'affiliator', limit: 100 }),
       userApi.list({ role: 'mitra', limit: 100 }),
       outletApi.list({ limit: 100 }),
     ])
-    leaders.value = leaderRes.data.data || []
+    affiliators.value = affiliatorRes.data.data || []
     mitras.value = mitraRes.data.data || []
     outlets.value = outletRes.data.data || []
   } catch {}
@@ -249,8 +260,9 @@ async function loadPartnerships() {
     const { data } = await partnershipApi.list({ page: 1, limit: 50 })
     partnerships.value = data.data || []
     total.value = data.meta?.total || partnerships.value.length
-    // Load invoices for each partnership
-    loadInvoices()
+    // Load invoices for each partnership, then auto-sync
+    await loadInvoices()
+    autoSyncOnLoad()
   } catch {
     toast.error('Gagal memuat partnership')
   }
@@ -271,8 +283,52 @@ async function loadInvoices() {
   invoiceMap.value = map
 }
 
+const alreadySynced = ref(false)
+
+async function autoSyncOnLoad() {
+  if (alreadySynced.value) return
+  // Check if any pending invoices exist
+  const hasPending = Object.values(invoiceMap.value).some(invs => invs.some(i => i.status === 'PENDING' && i.midtrans_order_id))
+  if (!hasPending) return
+  alreadySynced.value = true
+  try {
+    await invoiceApi.syncPending()
+    // Reload invoices only (no recursive sync)
+    await reloadInvoicesOnly()
+  } catch {}
+}
+
+async function reloadInvoicesOnly() {
+  const map = {}
+  await Promise.all(
+    partnerships.value.map(async (p) => {
+      try {
+        const { data } = await invoiceApi.getByPartnership(p.id)
+        map[p.id] = data.data || []
+      } catch {
+        map[p.id] = []
+      }
+    })
+  )
+  invoiceMap.value = map
+}
+
+async function syncInvoiceStatuses() {
+  syncingAll.value = true
+  try {
+    const { data } = await invoiceApi.syncPending()
+    toast.success(data.message || 'Sinkronisasi selesai')
+    // Reload invoices
+    await reloadInvoicesOnly()
+  } catch (e) {
+    toast.error('Gagal menyinkronkan invoice')
+  } finally {
+    syncingAll.value = false
+  }
+}
+
 function openCreate() {
-  Object.assign(form, { leader_id: '', mitra_id: '', outlet_id: '', package_id: '' })
+  Object.assign(form, { affiliator_id: '', mitra_id: '', outlet_id: '', package_id: '' })
   packages.value = []
   showModal.value = true
 }
@@ -290,8 +346,8 @@ async function onOutletChange() {
 }
 
 async function create() {
-  if (!form.leader_id || !form.mitra_id) {
-    toast.error('Pilih Leader dan Mitra')
+  if (!form.affiliator_id || !form.mitra_id) {
+    toast.error('Pilih Affiliator dan Mitra')
     return
   }
   if (!form.outlet_id || !form.package_id) {
@@ -301,7 +357,7 @@ async function create() {
   saving.value = true
   try {
     const payload = {
-      leader_id: form.leader_id,
+      affiliator_id: form.affiliator_id,
       mitra_id: form.mitra_id,
       outlet_id: form.outlet_id,
       package_id: form.package_id,
@@ -336,7 +392,6 @@ async function create() {
 .ps-btn-sec { padding: 11px 22px; border-radius: 12px; font-size: .85rem; font-weight: 600; background: #f1f5f9; color: #475569; border: none; cursor: pointer; }
 
 /* ═══ TOOLBAR ═══ */
-.ps-toolbar { margin-bottom: 20px; }
 .ps-search-wrap { position: relative; max-width: 400px; }
 .ps-search-ico { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); }
 .ps-search { width: 100%; padding: 10px 14px 10px 40px; border: 1.5px solid #e2e8f0; border-radius: 12px; font-size: .85rem; background: #fff; color: #1e293b; outline: none; box-sizing: border-box; }
@@ -408,6 +463,15 @@ async function create() {
 .ps-input:focus { border-color: #6366f1; background: #fff; }
 select.ps-input { background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e"); background-position: right 12px center; background-repeat: no-repeat; background-size: 16px; padding-right: 36px; cursor: pointer; }
 .ps-field-hint { font-size: .72rem; color: #94a3b8; margin-top: 4px; }
+
+/* ═══ SYNC BUTTON ═══ */
+.ps-toolbar { margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.ps-sync-btn { display: inline-flex; align-items: center; gap: 6px; padding: 9px 16px; border-radius: 10px; border: 1px solid #99f6e4; background: #f0fdfa; color: #0d9488; font-size: .78rem; font-weight: 700; cursor: pointer; transition: all .2s; white-space: nowrap; font-family: inherit; }
+.ps-sync-btn:hover { background: #ccfbf1; border-color: #5eead4; box-shadow: 0 2px 8px rgba(20,184,166,0.15); }
+.ps-sync-btn:disabled { opacity: .6; cursor: not-allowed; }
+.ps-expired-tag { font-size: .62rem; font-weight: 700; color: #ef4444; background: #fef2f2; padding: 1px 6px; border-radius: 4px; }
+@keyframes ps-spin-anim { to { transform: rotate(360deg); } }
+.ps-spin { animation: ps-spin-anim 1s linear infinite; }
 
 @media (max-width: 768px) {
   .ps-hero { padding: 24px 20px 18px; }

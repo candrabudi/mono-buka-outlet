@@ -68,19 +68,6 @@ func RegisterPanelRoutes(r *gin.Engine, h Handlers, jwtSecret string) {
 				outletPkgs.DELETE("/:id", h.OutletPackage.Delete)
 			}
 
-			// Leads — master, admin
-			leads := adminProtected.Group("/leads")
-			leads.Use(middleware.RoleAuth(entity.RoleMaster, entity.RoleAdmin))
-			{
-				leads.POST("", h.Lead.Create)
-				leads.GET("", h.Lead.GetAll)
-				leads.GET("/kanban", h.Lead.GetKanban)
-				leads.GET("/:id", h.Lead.GetByID)
-				leads.PUT("/:id", h.Lead.Update)
-				leads.PATCH("/:id/status", h.Lead.UpdateStatus)
-				leads.DELETE("/:id", h.Lead.Delete)
-			}
-
 			// Partnerships — master, admin (read), finance (can view)
 			partnerships := adminProtected.Group("/partnerships")
 			{
@@ -89,6 +76,7 @@ func RegisterPanelRoutes(r *gin.Engine, h Handlers, jwtSecret string) {
 					entity.RoleMaster, entity.RoleAdmin, entity.RoleFinance,
 				), h.Partnership.GetAll)
 				partnerships.GET("/:id", h.Partnership.GetByID)
+				partnerships.PATCH("/:id/status", middleware.RoleAuth(entity.RoleMaster, entity.RoleAdmin), h.Partnership.UpdateStatus)
 			}
 
 			// Payments — master, finance
@@ -162,7 +150,9 @@ func RegisterPanelRoutes(r *gin.Engine, h Handlers, jwtSecret string) {
 				invoices.POST("", middleware.RoleAuth(entity.RoleMaster, entity.RoleAdmin, entity.RoleFinance), h.Invoice.Create)
 				invoices.GET("/partnership/:partnership_id", h.Invoice.GetByPartnership)
 				invoices.GET("/:id", h.Invoice.GetByID)
+				invoices.GET("/:id/check-status", h.Invoice.CheckStatus)
 				invoices.PUT("/:id/approve", middleware.RoleAuth(entity.RoleMaster, entity.RoleAdmin, entity.RoleFinance), h.Invoice.ManualApprove)
+				invoices.POST("/sync-pending", middleware.RoleAuth(entity.RoleMaster, entity.RoleAdmin), h.Invoice.SyncAllPending)
 			}
 
 			// Location Submissions
@@ -252,6 +242,15 @@ func RegisterPanelRoutes(r *gin.Engine, h Handlers, jwtSecret string) {
 
 				// Cache
 				ai.POST("/cache/invalidate", h.AIAdmin.InvalidateCache)
+			}
+
+			// Affiliator — affiliator only (self-service)
+			affiliator := adminProtected.Group("/affiliator")
+			affiliator.Use(middleware.RoleAuth(entity.RoleAffiliator))
+			{
+				affiliator.GET("/dashboard", h.Affiliator.GetDashboard)
+				affiliator.GET("/partnerships", h.Affiliator.GetMyPartnerships)
+				affiliator.GET("/referral-code", h.Affiliator.GetReferralCode)
 			}
 		}
 	}

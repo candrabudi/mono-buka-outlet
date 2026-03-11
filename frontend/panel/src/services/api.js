@@ -67,20 +67,11 @@ export const outletPackageApi = {
   delete: (id) => api.delete(`/outlet-packages/${id}`),
 }
 
-export const leadApi = {
-  list: (params) => api.get('/leads', { params }),
-  get: (id) => api.get(`/leads/${id}`),
-  kanban: (params) => api.get('/leads/kanban', { params }),
-  create: (data) => api.post('/leads', data),
-  update: (id, data) => api.put(`/leads/${id}`, data),
-  updateStatus: (id, data) => api.patch(`/leads/${id}/status`, data),
-  delete: (id) => api.delete(`/leads/${id}`),
-}
-
 export const partnershipApi = {
   list: (params) => api.get('/partnerships', { params }),
   get: (id) => api.get(`/partnerships/${id}`),
   create: (data) => api.post('/partnerships', data),
+  updateStatus: (id, data) => api.patch(`/partnerships/${id}/status`, data),
 }
 
 export const paymentApi = {
@@ -164,6 +155,8 @@ export const invoiceApi = {
   getByPartnership: (id) => api.get(`/invoices/partnership/${id}`),
   getByID: (id) => api.get(`/invoices/${id}`),
   approve: (id, data) => api.put(`/invoices/${id}/approve`, data),
+  checkStatus: (id) => api.get(`/invoices/${id}/check-status`),
+  syncPending: () => api.post('/invoices/sync-pending'),
 }
 
 export const locationApi = {
@@ -237,4 +230,11 @@ export const aiApi = {
 
   // Cache
   invalidateCache: () => api.post('/ai/cache/invalidate'),
+}
+
+// Affiliator
+export const affiliatorApi = {
+  dashboard: () => api.get('/affiliator/dashboard'),
+  partnerships: (params) => api.get('/affiliator/partnerships', { params }),
+  referralCode: () => api.get('/affiliator/referral-code'),
 }

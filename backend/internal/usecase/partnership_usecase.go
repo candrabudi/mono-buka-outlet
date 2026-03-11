@@ -20,12 +20,11 @@ func NewPartnershipUseCase(pr repository.PartnershipRepository, lr repository.Ac
 }
 
 type CreatePartnershipRequest struct {
-	LeadID    string `json:"lead_id"`
-	BrandID   string `json:"brand_id"`
-	MitraID   string `json:"mitra_id" binding:"required"`
-	LeaderID  string `json:"leader_id"`
-	OutletID  string `json:"outlet_id"`
-	PackageID string `json:"package_id"`
+	BrandID      string `json:"brand_id"`
+	MitraID      string `json:"mitra_id" binding:"required"`
+	AffiliatorID string `json:"affiliator_id"`
+	OutletID     string `json:"outlet_id"`
+	PackageID    string `json:"package_id"`
 }
 
 func (uc *PartnershipUseCase) Create(ctx context.Context, req CreatePartnershipRequest) (*entity.Partnership, error) {
@@ -40,18 +39,14 @@ func (uc *PartnershipUseCase) Create(ctx context.Context, req CreatePartnershipR
 		CreatedAt: time.Now(), UpdatedAt: time.Now(),
 	}
 
-	if req.LeadID != "" {
-		leadID, _ := uuid.Parse(req.LeadID)
-		p.LeadID = &leadID
-	}
 	if req.BrandID != "" {
 		brandID, _ := uuid.Parse(req.BrandID)
 		p.BrandID = &brandID
 	}
-	if req.LeaderID != "" {
-		leaderID, err := uuid.Parse(req.LeaderID)
+	if req.AffiliatorID != "" {
+		affiliatorID, err := uuid.Parse(req.AffiliatorID)
 		if err == nil {
-			p.LeaderID = &leaderID
+			p.AffiliatorID = &affiliatorID
 		}
 	}
 	if req.OutletID != "" {
@@ -89,4 +84,50 @@ func (uc *PartnershipUseCase) GetAll(ctx context.Context, brandID, mitraID *uuid
 
 func (uc *PartnershipUseCase) GetByMitra(ctx context.Context, mitraID uuid.UUID) ([]*entity.Partnership, error) {
 	return uc.partnershipRepo.FindByMitraID(ctx, mitraID)
+}
+
+type UpdatePartnershipStatusRequest struct {
+	Status   string `json:"status" binding:"required"`
+	Progress *int   `json:"progress_percentage"`
+}
+
+var validStatuses = map[string]int{
+	entity.PartnershipStatusPending:         0,
+	entity.PartnershipStatusDPVerified:      25,
+	entity.PartnershipStatusAgreementSigned: 50,
+	entity.PartnershipStatusDevelopment:     75,
+	entity.PartnershipStatusRunning:         90,
+	entity.PartnershipStatusCompleted:       100,
+}
+
+func (uc *PartnershipUseCase) UpdateStatus(ctx context.Context, id uuid.UUID, req UpdatePartnershipStatusRequest) (*entity.Partnership, error) {
+	// Validate status
+	defaultProgress, ok := validStatuses[req.Status]
+	if !ok {
+		return nil, fmt.Errorf("status tidak valid: %s", req.Status)
+	}
+
+	// Use custom progress if provided, otherwise use default
+	progress := defaultProgress
+	if req.Progress != nil {
+		if *req.Progress < 0 || *req.Progress > 100 {
+			return nil, fmt.Errorf("progress harus antara 0-100")
+		}
+		progress = *req.Progress
+	}
+
+	// Check partnership exists
+	p, err := uc.partnershipRepo.FindByID(ctx, id)
+	if err != nil {
+		return nil, fmt.Errorf("partnership tidak ditemukan")
+	}
+
+	// Update
+	if err := uc.partnershipRepo.UpdateProgress(ctx, id, progress, req.Status); err != nil {
+		return nil, fmt.Errorf("gagal mengupdate status: %w", err)
+	}
+
+	p.Status = req.Status
+	p.ProgressPercentage = progress
+	return p, nil
 }

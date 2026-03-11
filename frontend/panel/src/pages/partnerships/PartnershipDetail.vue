@@ -35,16 +35,50 @@
         </div>
       </div>
 
+      <!-- Status Pipeline -->
+      <div class="pd-pipeline-wrap">
+        <div class="pd-pipeline-header">
+          <h3 class="pd-pipeline-title"><i class="ri-flow-chart"></i> Status Partnership</h3>
+        </div>
+        <div class="pd-pipeline">
+          <div v-for="(st, idx) in statusSteps" :key="st.val" class="pd-pipe-step"
+            :class="{ active: p.status === st.val, completed: statusIdx(p.status) > idx, selected: selectedStatus === st.val && selectedStatus !== p.status }"
+            @click="selectedStatus = st.val">
+            <div class="pd-pipe-line" v-if="idx > 0" :class="{ done: statusIdx(p.status) >= idx }"></div>
+            <div class="pd-pipe-dot" :style="pipeDotStyle(st, idx)">
+              <i :class="statusIdx(p.status) > idx ? 'ri-check-line' : st.icon"></i>
+            </div>
+            <div class="pd-pipe-text">
+              <div class="pd-pipe-label">{{ st.label }}</div>
+              <div class="pd-pipe-prog">{{ st.progress }}%</div>
+            </div>
+          </div>
+        </div>
+        <transition name="pd-slide">
+          <div v-if="selectedStatus && selectedStatus !== p.status" class="pd-status-confirm">
+            <div class="pd-sc-info">
+              <span class="pd-sc-from">{{ statusLabel(p.status) }}</span>
+              <i class="ri-arrow-right-line pd-sc-arrow"></i>
+              <span class="pd-sc-to">{{ statusLabel(selectedStatus) }}</span>
+            </div>
+            <button @click="doUpdateStatus" class="pd-sc-btn" :disabled="updatingStatus">
+              <i :class="updatingStatus ? 'ri-loader-4-line ri-spin' : 'ri-check-double-line'"></i>
+              {{ updatingStatus ? 'Memproses...' : 'Konfirmasi' }}
+            </button>
+          </div>
+        </transition>
+      </div>
+
       <!-- Info Cards Row -->
       <div class="pd-info-grid">
         <div class="pd-info-card">
-          <div class="pd-info-icon ic-leader">
+          <div class="pd-info-icon ic-affiliator">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>
           </div>
           <div class="pd-info-body">
-            <div class="pd-info-label">Leader</div>
-            <div class="pd-info-value">{{ p.leader?.name || '-' }}</div>
-            <div class="pd-info-sub" v-if="p.leader?.email">{{ p.leader.email }}</div>
+            <div class="pd-info-label">Affiliator</div>
+            <div class="pd-info-value">{{ p.affiliator?.name || '-' }}</div>
+            <div class="pd-info-sub" v-if="p.affiliator?.email">{{ p.affiliator.email }}</div>
           </div>
         </div>
         <div class="pd-info-card">
@@ -91,10 +125,16 @@
         <template v-if="tab==='invoices'">
           <div class="pd-content-head">
             <h3>Daftar Invoice</h3>
-            <button @click="openInvModal" class="pd-add-btn">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-              Buat Invoice
-            </button>
+            <div class="pd-content-head-actions">
+              <button v-if="hasPendingInvoices" @click="syncAllInvoices" class="pd-sync-btn" :disabled="syncing" title="Sinkronkan status semua invoice pending dengan Midtrans">
+                <svg :class="{ 'spin-icon': syncing }" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 12a9 9 0 1 1-6.219-8.56" stroke-linecap="round"/></svg>
+                {{ syncing ? 'Menyinkronkan...' : 'Sync Status' }}
+              </button>
+              <button @click="openInvModal" class="pd-add-btn">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Buat Invoice
+              </button>
+            </div>
           </div>
           <div v-if="invoices.length" class="pd-items">
             <div v-for="inv in invoices" :key="inv.id" class="pd-item">
@@ -107,7 +147,12 @@
                     <span class="pd-inv-type-tag" :class="'invt-'+inv.type">{{ invTypeLabel(inv.type) }}</span>
                     {{ inv.invoice_number }}
                   </div>
-                  <div class="pd-item-date">{{ formatDate(inv.created_at) }} · {{ inv.description || '-' }}</div>
+                  <div class="pd-item-date">
+                    {{ formatDate(inv.created_at) }} · {{ inv.description || '-' }}
+                    <span v-if="inv.expired_at && inv.status==='PENDING'" class="pd-expiry-hint" :class="{ 'pd-expiry-soon': isExpiringSoon(inv) }">
+                      · {{ expiryLabel(inv) }}
+                    </span>
+                  </div>
                 </div>
               </div>
               <div class="pd-item-right">
@@ -134,6 +179,11 @@
                   <button v-if="inv.status==='PENDING'" @click="openApproveModal(inv)" class="pd-approve-btn" title="Verifikasi pembayaran manual">
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
                     Verifikasi
+                  </button>
+                  <!-- Check Status from Midtrans -->
+                  <button v-if="inv.status==='PENDING' && inv.midtrans_order_id" @click="checkInvoiceStatus(inv)" class="pd-check-btn" :disabled="checkingInv[inv.id]" title="Cek status pembayaran di Midtrans">
+                    <svg :class="{ 'spin-icon': checkingInv[inv.id] }" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 12a9 9 0 1 1-6.219-8.56" stroke-linecap="round"/></svg>
+                    {{ checkingInv[inv.id] ? 'Mengecek...' : 'Cek Status' }}
                   </button>
                 </div>
               </div>
@@ -171,7 +221,7 @@
               <div class="pd-item-right">
                 <a v-if="a.file_url" :href="a.file_url" target="_blank" class="pd-verify-btn" style="margin-right:6px">Lihat File</a>
                 <template v-if="a.type==='CONTRACT'">
-                  <span class="pd-badge" :class="a.status==='SIGNED'?'bg-verified':'bg-pending'">{{ a.status==='SIGNED' ? '✓ Sudah Ditandatangani' : '⏳ Belum Ditandatangani' }}</span>
+                  <span class="pd-badge" :class="a.status==='SIGNED'?'bg-verified':'bg-pending'">{{ a.status==='SIGNED' ? 'Sudah Ditandatangani' : 'Belum Ditandatangani' }}</span>
                   <button v-if="a.status!=='SIGNED'" @click="signAgreement(a.id)" class="pd-verify-btn">Tandatangani</button>
                 </template>
                 <span v-else class="pd-badge bg-draft">Dokumen</span>
@@ -214,9 +264,12 @@
         <template v-else-if="tab==='locations'">
           <div class="pd-content-head">
             <h3><i class="ri-map-pin-line" style="margin-right:4px;color:#6366f1"></i> Peninjauan Lokasi</h3>
-            <button @click="showLocModal=true" class="pd-add-btn">
+            <button v-if="canAddLocation" @click="showLocModal=true" class="pd-add-btn">
               <i class="ri-add-line"></i> Tambah Lokasi
             </button>
+            <span v-else-if="locations.length" class="pd-loc-info-badge">
+              <i class="ri-information-line"></i> Sudah ada lokasi aktif ({{ locStatusLabel(activeLocationStatus) }})
+            </span>
           </div>
           <div v-if="locations.length" class="pd-items">
             <div v-for="loc in locations" :key="loc.id" class="pd-loc-card" @click="$router.push({name:'LocationDetail',params:{id:loc.id}})">
@@ -262,8 +315,8 @@
             <div class="pd-fg">
               <label>Tipe Dokumen <span class="req">*</span></label>
               <select v-model="agrForm.type" class="pd-input" required>
-                <option value="CONTRACT">📝 Kontrak (perlu ditandatangani)</option>
-                <option value="DOCUMENT">📄 Dokumen Lainnya</option>
+                <option value="CONTRACT">Kontrak (perlu ditandatangani)</option>
+                <option value="DOCUMENT">Dokumen Lainnya</option>
               </select>
             </div>
             <div class="pd-fg">
@@ -280,7 +333,7 @@
                   <span class="pd-upload-hint">PDF, DOCX (maks 10MB)</span>
                 </div>
                 <div v-else class="pd-upload-preview">
-                  <div class="pd-file-name">📄 {{ agrFileName }}</div>
+                  <div class="pd-file-name">{{ agrFileName }}</div>
                   <button type="button" @click.stop="clearAgrFile" class="pd-upload-clear">&times;</button>
                 </div>
               </div>
@@ -429,7 +482,7 @@
                 </div>
                 <div v-else class="pd-upload-preview">
                   <img v-if="proofPreview !== 'file'" :src="proofPreview" />
-                  <span v-else class="pd-file-name">📄 {{ proofFileName }}</span>
+                  <span v-else class="pd-file-name">{{ proofFileName }}</span>
                   <button type="button" @click.stop="clearProofFile" class="pd-upload-clear">&times;</button>
                 </div>
               </div>
@@ -574,6 +627,43 @@ const proofPreview = ref('')
 const proofFileName = ref('')
 const showProofViewer = ref(false)
 const proofViewTarget = ref(null)
+const selectedStatus = ref('')
+const updatingStatus = ref(false)
+
+const statusSteps = [
+  { val:'PENDING', label:'Menunggu', progress:0, icon:'ri-time-line', color:'#f59e0b' },
+  { val:'DP_VERIFIED', label:'DP Terverifikasi', progress:25, icon:'ri-money-dollar-circle-line', color:'#0ea5e9' },
+  { val:'AGREEMENT_SIGNED', label:'Perjanjian', progress:50, icon:'ri-file-text-line', color:'#8b5cf6' },
+  { val:'DEVELOPMENT', label:'Pembangunan', progress:75, icon:'ri-building-2-line', color:'#6366f1' },
+  { val:'RUNNING', label:'Berjalan', progress:90, icon:'ri-run-line', color:'#22c55e' },
+  { val:'COMPLETED', label:'Selesai', progress:100, icon:'ri-checkbox-circle-fill', color:'#10b981' },
+]
+
+function statusIdx(s) { return statusSteps.findIndex(st => st.val === s) }
+function pipeDotStyle(st, idx) {
+  const cur = statusIdx(p.value?.status)
+  if (idx === cur) return { background: st.color, color: '#fff', boxShadow: `0 0 0 4px ${st.color}22` }
+  if (idx < cur) return { background: '#22c55e', color: '#fff' }
+  if (selectedStatus.value === st.val && selectedStatus.value !== p.value?.status) return { background: st.color + '18', color: st.color, border: `2px solid ${st.color}` }
+  return {}
+}
+
+async function doUpdateStatus() {
+  updatingStatus.value = true
+  try {
+    const step = statusSteps.find(s => s.val === selectedStatus.value)
+    await partnershipApi.updateStatus(id, { status: selectedStatus.value, progress_percentage: step?.progress || 0 })
+    toast.success('Status berhasil diubah ke ' + statusLabel(selectedStatus.value))
+    await loadAll()
+    selectedStatus.value = p.value.status
+  } catch(e) { toast.error(e.response?.data?.error || 'Gagal mengubah status') }
+  finally { updatingStatus.value = false }
+}
+
+// Midtrans status check
+const checkingInv = reactive({})
+const syncing = ref(false)
+const hasPendingInvoices = computed(() => invoices.value.some(i => i.status === 'PENDING'))
 
 const creatingLoc = ref(false)
 const locForm = reactive({
@@ -583,8 +673,16 @@ const locForm = reactive({
   dekat_dengan:'', jumlah_kompetitor:0, target_market:''
 })
 
-function locStatusLabel(s) { return { DRAFT:'Draft', SUBMITTED:'Diajukan', IN_REVIEW:'Ditinjau', SURVEY_SCHEDULED:'Survei', SURVEYED:'Disurvei', APPROVED:'Disetujui', REJECTED:'Ditolak', REVISION_NEEDED:'Revisi' }[s] || s }
+function locStatusLabel(s) { return { DRAFT:'Draft', SUBMITTED:'Diajukan', IN_REVIEW:'Ditinjau', SURVEY_SCHEDULED:'Survei Dijadwalkan', SURVEYED:'Sudah Disurvei', APPROVED:'Disetujui', REJECTED:'Ditolak', REVISION_NEEDED:'Perlu Revisi' }[s] || s }
 function locScoreColor(s) { if (s >= 80) return '#22c55e'; if (s >= 65) return '#6366f1'; if (s >= 50) return '#f59e0b'; return '#ef4444' }
+
+const activeLocationStatus = computed(() => {
+  const active = locations.value.find(l => l.status !== 'REJECTED')
+  return active?.status || ''
+})
+const canAddLocation = computed(() => {
+  return !locations.value.some(l => l.status !== 'REJECTED')
+})
 
 async function createLoc() {
   creatingLoc.value = true
@@ -618,7 +716,7 @@ function getInitial(name) { return name ? name.split(' ').map(n=>n[0]).join('').
 function formatDate(d) { return d ? new Date(d).toLocaleDateString('id-ID', { day:'numeric', month:'short', year:'numeric' }) : '-' }
 function fc(v) { return new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',minimumFractionDigits:0}).format(v) }
 function statusLabel(s) {
-  const map = { PENDING:'Menunggu', DP_VERIFIED:'DP Terverifikasi', AGREEMENT_SIGNED:'Agreement Signed', DEVELOPMENT:'Pembangunan', RUNNING:'Berjalan', COMPLETED:'Selesai' }
+  const map = { PENDING:'Menunggu', DP_VERIFIED:'DP Terverifikasi', AGREEMENT_SIGNED:'Perjanjian Ditandatangani', DEVELOPMENT:'Pembangunan', RUNNING:'Berjalan', COMPLETED:'Selesai' }
   return map[s] || s
 }
 
@@ -626,7 +724,7 @@ onMounted(loadAll)
 
 async function loadAll() {
   try {
-    const { data } = await partnershipApi.get(id); p.value = data.data
+    const { data } = await partnershipApi.get(id); p.value = data.data; selectedStatus.value = p.value.status
   } catch { toast.error('Gagal memuat data partnership') }
   const [agrR,revR,invR] = await Promise.all([
     agreementApi.byPartnership(id).catch(()=>({data:{data:[]}})),
@@ -636,6 +734,72 @@ async function loadAll() {
   agreements.value = agrR.data.data||[]; revenues.value = revR.data.data||[]; invoices.value = invR.data.data||[]
   // Load locations
   try { const locR = await locationApi.getByPartnership(id); locations.value = locR.data.data||[] } catch { locations.value = [] }
+  // Auto-sync pending invoices on load
+  syncOnLoad()
+}
+
+async function syncOnLoad() {
+  const pending = invoices.value.filter(i => i.status === 'PENDING' && i.midtrans_order_id)
+  if (!pending.length) return
+  for (const inv of pending) {
+    try {
+      const { data } = await invoiceApi.checkStatus(inv.id)
+      if (data.synced) {
+        const idx = invoices.value.findIndex(i => i.id === inv.id)
+        if (idx !== -1) invoices.value[idx] = data.data
+      }
+    } catch {}
+  }
+}
+
+async function checkInvoiceStatus(inv) {
+  checkingInv[inv.id] = true
+  try {
+    const { data } = await invoiceApi.checkStatus(inv.id)
+    if (data.synced) {
+      toast.success(data.message)
+      // Update invoice in list
+      const idx = invoices.value.findIndex(i => i.id === inv.id)
+      if (idx !== -1) invoices.value[idx] = data.data
+    } else {
+      toast.info(data.message || 'Status belum berubah')
+    }
+  } catch (e) {
+    toast.error('Gagal cek status Midtrans')
+  } finally {
+    checkingInv[inv.id] = false
+  }
+}
+
+async function syncAllInvoices() {
+  syncing.value = true
+  try {
+    const { data } = await invoiceApi.syncPending()
+    toast.success(data.message || 'Sinkronisasi selesai')
+    // Reload all invoices
+    const invR = await invoiceApi.getByPartnership(id)
+    invoices.value = invR.data.data || []
+  } catch (e) {
+    toast.error('Gagal menyinkronkan invoice')
+  } finally {
+    syncing.value = false
+  }
+}
+
+function isExpiringSoon(inv) {
+  if (!inv.expired_at) return false
+  const diff = new Date(inv.expired_at) - new Date()
+  return diff > 0 && diff < 3 * 60 * 60 * 1000 // < 3 hours
+}
+
+function expiryLabel(inv) {
+  if (!inv.expired_at) return ''
+  const diff = new Date(inv.expired_at) - new Date()
+  if (diff <= 0) return 'Kedaluwarsa'
+  const hours = Math.floor(diff / (1000 * 60 * 60))
+  const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
+  if (hours > 0) return `${hours}j ${mins}m tersisa`
+  return `${mins} menit tersisa`
 }
 
 // File upload helpers
@@ -682,7 +846,7 @@ function invBadge(s) {
   return { PAID:'bg-verified', PENDING:'bg-pending', EXPIRED:'bg-draft', FAILED:'bg-draft', CANCELED:'bg-draft' }[s] || 'bg-draft'
 }
 function invLabel(s) {
-  return { PAID:'✓ Lunas', PENDING:'Menunggu', EXPIRED:'Kadaluarsa', FAILED:'Gagal', CANCELED:'Dibatalkan' }[s] || s
+  return { PAID:'Lunas', PENDING:'Menunggu', EXPIRED:'Kadaluarsa', FAILED:'Gagal', CANCELED:'Dibatalkan' }[s] || s
 }
 function invTypeLabel(t) {
   return { DP:'DP', CICILAN:'Cicilan', PELUNASAN:'Pelunasan', INVOICE:'Invoice' }[t] || t || 'Invoice'
@@ -813,6 +977,40 @@ function copyLink(url) {
 .pd-back { display: inline-flex; align-items: center; gap: 6px; color: #64748b; font-size: 0.8rem; font-weight: 600; text-decoration: none; margin-bottom: 20px; padding: 6px 12px 6px 8px; border-radius: 8px; transition: all .2s; }
 .pd-back:hover { color: #0f172a; background: #f1f5f9; }
 
+/* ─── STATUS PIPELINE ─── */
+.pd-pipeline-wrap { background:#fff; border:1px solid #eef1f6; border-radius:16px; padding:20px 24px; margin-bottom:20px; }
+.pd-pipeline-header { margin-bottom:16px; }
+.pd-pipeline-title { font-size:.88rem; font-weight:700; color:#0f172a; margin:0; display:flex; align-items:center; gap:6px; }
+.pd-pipeline-title i { color:#6366f1; font-size:1.05rem; }
+.pd-pipeline { display:flex; align-items:flex-start; gap:0; }
+.pd-pipe-step { position:relative; display:flex; flex-direction:column; align-items:center; gap:6px; flex:1; padding:8px 4px; cursor:pointer; transition:all .2s; border-radius:10px; }
+.pd-pipe-step:hover { background:#f8fafc; }
+.pd-pipe-step.active { background:#f0f9ff; }
+.pd-pipe-step.selected { background:#faf5ff; }
+.pd-pipe-line { position:absolute; top:24px; left:-50%; width:100%; height:2px; background:#e2e8f0; z-index:0; }
+.pd-pipe-line.done { background:#22c55e; }
+.pd-pipe-dot { position:relative; z-index:1; width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:.9rem; background:#f1f5f9; color:#94a3b8; flex-shrink:0; transition:all .25s; border:2px solid transparent; }
+.pd-pipe-step.active .pd-pipe-dot { transform:scale(1.1); }
+.pd-pipe-text { text-align:center; }
+.pd-pipe-label { font-size:.68rem; font-weight:700; color:#334155; line-height:1.2; }
+.pd-pipe-step.active .pd-pipe-label { color:#0f172a; }
+.pd-pipe-step.completed .pd-pipe-label { color:#64748b; }
+.pd-pipe-prog { font-size:.58rem; color:#94a3b8; font-weight:600; }
+.pd-status-confirm { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:14px 20px; background:linear-gradient(135deg,#f8fafc,#eef2ff); border:1.5px solid #c7d2fe; border-radius:12px; margin-top:12px; }
+.pd-sc-info { display:flex; align-items:center; gap:8px; font-size:.82rem; font-weight:600; }
+.pd-sc-from { color:#64748b; }
+.pd-sc-arrow { color:#6366f1; font-size:1rem; }
+.pd-sc-to { color:#6366f1; font-weight:700; }
+.pd-sc-btn { display:inline-flex; align-items:center; gap:6px; padding:9px 20px; font-size:.8rem; font-weight:700; border-radius:10px; border:none; cursor:pointer; background:linear-gradient(135deg,#6366f1,#8b5cf6); color:#fff; white-space:nowrap; font-family:inherit; transition:all .15s; }
+.pd-sc-btn:hover { box-shadow:0 4px 14px rgba(99,102,241,.3); }
+.pd-sc-btn:disabled { opacity:.6; cursor:not-allowed; }
+.pd-slide-enter-active { transition:all .3s ease; }
+.pd-slide-leave-active { transition:all .2s ease; }
+.pd-slide-enter-from { transform:translateY(-8px); opacity:0; }
+.pd-slide-leave-to { transform:translateY(-8px); opacity:0; }
+.ri-spin { animation:riSpin .8s linear infinite; }
+@keyframes riSpin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+
 /* ─── HERO HEADER ─── */
 .pd-hero { background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%); border-radius: 20px; overflow: hidden; margin-bottom: 20px; position: relative; }
 .pd-hero::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse at 80% 20%, rgba(99,102,241,0.15) 0%, transparent 60%); pointer-events: none; }
@@ -841,7 +1039,7 @@ function copyLink(url) {
 .pd-info-card { background: #fff; border-radius: 14px; border: 1px solid #eef1f6; padding: 16px; display: flex; gap: 12px; transition: all .25s ease; }
 .pd-info-card:hover { box-shadow: 0 6px 24px rgba(0,0,0,0.06); border-color: #e0e7ff; transform: translateY(-2px); }
 .pd-info-icon { width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-.ic-leader { background: linear-gradient(135deg, #fef9c3, #fef3c7); color: #ca8a04; }
+.ic-affiliator { background: linear-gradient(135deg, #fef9c3, #fef3c7); color: #ca8a04; }
 .ic-outlet { background: linear-gradient(135deg, #dbeafe, #eff6ff); color: #2563eb; }
 .ic-pkg { background: linear-gradient(135deg, #ede9fe, #f5f3ff); color: #7c3aed; }
 .ic-date { background: linear-gradient(135deg, #dcfce7, #f0fdf4); color: #16a34a; }
@@ -903,6 +1101,19 @@ function copyLink(url) {
 /* ─── APPROVE BUTTON & MODAL ─── */
 .pd-approve-btn { display: inline-flex; align-items: center; gap: 4px; padding: 5px 12px; border-radius: 8px; border: 1px solid #86efac; background: #f0fdf4; color: #15803d; font-size: 0.7rem; font-weight: 700; cursor: pointer; transition: all .2s; white-space: nowrap; font-family: inherit; }
 .pd-approve-btn:hover { background: #dcfce7; border-color: #4ade80; box-shadow: 0 2px 8px rgba(34,197,94,0.15); }
+
+/* ─── MIDTRANS STATUS CHECK ─── */
+.pd-content-head-actions { display: flex; align-items: center; gap: 8px; }
+.pd-sync-btn { display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: 8px; border: 1px solid #99f6e4; background: #f0fdfa; color: #0d9488; font-size: 0.72rem; font-weight: 700; cursor: pointer; transition: all .2s; white-space: nowrap; font-family: inherit; }
+.pd-sync-btn:hover { background: #ccfbf1; border-color: #5eead4; box-shadow: 0 2px 8px rgba(20,184,166,0.15); }
+.pd-sync-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+.pd-check-btn { display: inline-flex; align-items: center; gap: 4px; padding: 5px 10px; border-radius: 8px; border: 1px solid #fde68a; background: #fffbeb; color: #b45309; font-size: 0.68rem; font-weight: 700; cursor: pointer; transition: all .2s; white-space: nowrap; font-family: inherit; }
+.pd-check-btn:hover { background: #fef3c7; border-color: #fbbf24; box-shadow: 0 2px 8px rgba(245,158,11,0.15); }
+.pd-check-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+.pd-expiry-hint { font-size: 0.65rem; color: #94a3b8; font-weight: 600; }
+.pd-expiry-soon { color: #ef4444; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.spin-icon { animation: spin 1s linear infinite; }
 
 .pd-modal-confirm { max-width: 420px; text-align: center; overflow: hidden; }
 .pd-confirm-body { padding: 32px 28px 20px; }
@@ -1056,6 +1267,7 @@ select.pd-input { background-image: url("data:image/svg+xml,%3csvg xmlns='http:/
 }
 
 /* ═══ LOCATION CARDS ═══ */
+.pd-loc-info-badge { display:inline-flex; align-items:center; gap:5px; font-size:.75rem; font-weight:600; color:#6366f1; background:#eef2ff; padding:6px 14px; border-radius:8px; border:1px solid #c7d2fe; }
 .pd-loc-card { background:#f8fafc; border:1px solid #eef1f6; border-radius:12px; padding:16px 18px; margin-bottom:10px; cursor:pointer; transition:all .2s; }
 .pd-loc-card:hover { border-color:#c7d2fe; box-shadow:0 2px 10px rgba(99,102,241,.06); }
 .pd-loc-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }

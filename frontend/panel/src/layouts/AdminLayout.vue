@@ -104,7 +104,7 @@ const pageTitles = {
   Payments: 'Pembayaran',
   Meetings: 'Meeting Management',
   Mitra: 'Management Mitra',
-  Leader: 'Management Leader',
+  Leader: 'Management Affiliator',
   Users: 'User Management',
   Settings: 'Pengaturan Sistem',
   Locations: 'Pengajuan Lokasi',
@@ -115,6 +115,7 @@ const pageTitles = {
   EbookEdit: 'Edit Ebook',
   EbookOrders: 'Pesanan Ebook',
   DownloadRequests: 'Request Download',
+  AffiliatorDashboard: 'Affiliator Dashboard',
 }
 const pageSubtitles = {
   Dashboard: "Let's check your update today",
@@ -127,7 +128,7 @@ const pageSubtitles = {
   Payments: 'Verifikasi & kelola pembayaran',
   Meetings: 'Kelola agenda, notulensi, dan action plan',
   Mitra: 'Kelola data mitra dan akses portal',
-  Leader: 'Kelola data leader yang menangani mitra',
+  Leader: 'Kelola data affiliator yang mengelola referral',
   Users: 'Kelola pengguna sistem',
   Settings: 'Konfigurasi aplikasi & integrasi pembayaran',
   Locations: 'Kelola pengajuan & survei lokasi mitra',
@@ -138,6 +139,7 @@ const pageSubtitles = {
   EbookEdit: 'Perbarui informasi ebook',
   EbookOrders: 'Pantau semua transaksi ebook',
   DownloadRequests: 'Approve atau reject permintaan download',
+  AffiliatorDashboard: 'Pantau referral & partnership Anda',
 }
 
 const pageTitle = computed(() => pageTitles[route.name] || '')

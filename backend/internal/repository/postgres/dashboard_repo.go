@@ -17,17 +17,7 @@ func NewDashboardRepo(db *sql.DB) *DashboardRepo {
 	return &DashboardRepo{db: db}
 }
 
-func (r *DashboardRepo) GetTotalLeads(ctx context.Context, brandID *uuid.UUID) (int, error) {
-	q := "SELECT COUNT(*) FROM leads WHERE deleted_at IS NULL"
-	args := []interface{}{}
-	if brandID != nil {
-		q += " AND brand_id = $1"
-		args = append(args, *brandID)
-	}
-	var total int
-	err := r.db.QueryRowContext(ctx, q, args...).Scan(&total)
-	return total, err
-}
+
 
 func (r *DashboardRepo) GetActiveMitra(ctx context.Context, brandID *uuid.UUID) (int, error) {
 	q := "SELECT COUNT(DISTINCT mitra_id) FROM partnerships WHERE deleted_at IS NULL AND status IN ('RUNNING', 'DP_VERIFIED', 'AGREEMENT_SIGNED', 'DEVELOPMENT')"
@@ -68,30 +58,7 @@ func (r *DashboardRepo) GetMonthlyRevenue(ctx context.Context, brandID *uuid.UUI
 	return total, err
 }
 
-func (r *DashboardRepo) GetLeadsByStatus(ctx context.Context, brandID *uuid.UUID) (map[string]int, error) {
-	q := "SELECT status, COUNT(*) FROM leads WHERE deleted_at IS NULL"
-	args := []interface{}{}
-	if brandID != nil {
-		q += " AND brand_id = $1"
-		args = append(args, *brandID)
-	}
-	q += " GROUP BY status"
-	rows, err := r.db.QueryContext(ctx, q, args...)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	result := make(map[string]int)
-	for rows.Next() {
-		var status string
-		var count int
-		if err := rows.Scan(&status, &count); err != nil {
-			return nil, err
-		}
-		result[status] = count
-	}
-	return result, nil
-}
+
 
 func (r *DashboardRepo) GetRevenueChart(ctx context.Context, brandID *uuid.UUID, months int) ([]map[string]interface{}, error) {
 	if months <= 0 {

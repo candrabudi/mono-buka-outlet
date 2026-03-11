@@ -8,10 +8,9 @@ import (
 
 type Partnership struct {
 	ID                 uuid.UUID  `json:"id"`
-	LeadID             *uuid.UUID `json:"lead_id,omitempty"`
 	BrandID            *uuid.UUID `json:"brand_id,omitempty"`
 	MitraID            uuid.UUID  `json:"mitra_id"`
-	LeaderID           *uuid.UUID `json:"leader_id,omitempty"`
+	AffiliatorID       *uuid.UUID `json:"affiliator_id,omitempty"`
 	OutletID           *uuid.UUID `json:"outlet_id,omitempty"`
 	PackageID          *uuid.UUID `json:"package_id,omitempty"`
 	ProgressPercentage int        `json:"progress_percentage"`
@@ -22,10 +21,9 @@ type Partnership struct {
 	DeletedAt          *time.Time `json:"deleted_at,omitempty"`
 
 	// Relations
-	Lead    *Lead          `json:"lead,omitempty"`
 	Brand   *Brand         `json:"brand,omitempty"`
 	Mitra   *User          `json:"mitra,omitempty"`
-	Leader  *User          `json:"leader,omitempty"`
+	Affiliator *User          `json:"affiliator,omitempty"`
 	Outlet  *Outlet        `json:"outlet,omitempty"`
 	Package *OutletPackage `json:"package,omitempty"`
 }

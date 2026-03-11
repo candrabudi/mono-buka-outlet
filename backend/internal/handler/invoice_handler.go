@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"crypto/sha512"
 	"encoding/hex"
 	"fmt"
@@ -186,6 +187,12 @@ func (h *InvoiceHandler) ManualApprove(c *gin.Context) {
 		return
 	}
 	inv, _ := h.invoiceRepo.FindByID(c.Request.Context(), id)
+
+	// Auto-update partnership progress
+	if inv != nil {
+		h.autoUpdatePartnershipProgress(c.Request.Context(), inv.PartnershipID)
+	}
+
 	c.JSON(http.StatusOK, gin.H{"data": inv, "message": "Invoice berhasil diverifikasi"})
 }
 
@@ -228,6 +235,14 @@ func (h *InvoiceHandler) MidtransWebhook(c *gin.Context) {
 		return
 	}
 
+	// Auto-update partnership progress when payment settles
+	if txnStatus == "settlement" || txnStatus == "capture" {
+		inv, findErr := h.invoiceRepo.FindByOrderID(c.Request.Context(), orderID)
+		if findErr == nil && inv != nil {
+			h.autoUpdatePartnershipProgress(c.Request.Context(), inv.PartnershipID)
+		}
+	}
+
 	c.JSON(http.StatusOK, gin.H{"status": "ok"})
 }
 
@@ -264,4 +279,181 @@ func (h *InvoiceHandler) GetMidtransClientKey(c *gin.Context) {
 		"client_key": clientKey,
 		"snap_url":   snapURL,
 	})
+}
+
+// CheckStatus — proactively check a single invoice status from Midtrans
+func (h *InvoiceHandler) CheckStatus(c *gin.Context) {
+	id, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
+		return
+	}
+
+	inv, err := h.invoiceRepo.FindByID(c.Request.Context(), id)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "invoice not found"})
+		return
+	}
+
+	// If no midtrans order, or already final status, return current
+	if inv.MidtransOrderID == "" || inv.Status == entity.InvoiceStatusPaid || inv.Status == entity.InvoiceStatusExpired || inv.Status == entity.InvoiceStatusFailed {
+		c.JSON(http.StatusOK, gin.H{"data": inv, "synced": false, "message": "Status sudah final"})
+		return
+	}
+
+	// Check expired_at locally first
+	if inv.ExpiredAt != nil && time.Now().After(*inv.ExpiredAt) && inv.Status == entity.InvoiceStatusPending {
+		_ = h.invoiceRepo.UpdateMidtransStatus(c.Request.Context(), inv.MidtransOrderID, "expire", "", "")
+		inv, _ = h.invoiceRepo.FindByID(c.Request.Context(), id)
+		c.JSON(http.StatusOK, gin.H{"data": inv, "synced": true, "message": "Invoice telah kedaluwarsa"})
+		return
+	}
+
+	// Call Midtrans API
+	status, err := h.midtransSvc.GetTransactionStatus(c.Request.Context(), inv.MidtransOrderID)
+	if err != nil {
+		log.Printf("[CheckStatus] Midtrans API error for %s: %v", inv.MidtransOrderID, err)
+		c.JSON(http.StatusOK, gin.H{"data": inv, "synced": false, "message": "Gagal cek status Midtrans"})
+		return
+	}
+
+	// Update if status changed
+	oldStatus := inv.Status
+	if err := h.invoiceRepo.UpdateMidtransStatus(c.Request.Context(), inv.MidtransOrderID, status.TransactionStatus, status.PaymentType, status.TransactionID); err != nil {
+		log.Printf("[CheckStatus] failed to update order %s: %v", inv.MidtransOrderID, err)
+	}
+
+	// Re-fetch updated invoice
+	inv, _ = h.invoiceRepo.FindByID(c.Request.Context(), id)
+	synced := inv.Status != oldStatus
+
+	// Auto-update partnership progress if status changed to PAID
+	if synced && inv.Status == entity.InvoiceStatusPaid {
+		h.autoUpdatePartnershipProgress(c.Request.Context(), inv.PartnershipID)
+	}
+
+	message := "Status tidak berubah"
+	if synced {
+		message = fmt.Sprintf("Status berubah: %s → %s", oldStatus, inv.Status)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": inv, "synced": synced, "message": message})
+}
+
+// SyncAllPending — batch sync all pending invoices with Midtrans
+func (h *InvoiceHandler) SyncAllPending(c *gin.Context) {
+	// First auto-expire past-due invoices
+	expired, _ := h.invoiceRepo.ExpirePendingInvoices(c.Request.Context())
+
+	// Then sync remaining pending invoices with Midtrans
+	pendingInvoices, err := h.invoiceRepo.FindPendingWithMidtrans(c.Request.Context())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	synced := 0
+	for _, inv := range pendingInvoices {
+		status, err := h.midtransSvc.GetTransactionStatus(c.Request.Context(), inv.MidtransOrderID)
+		if err != nil {
+			log.Printf("[SyncPending] Midtrans error for %s: %v", inv.MidtransOrderID, err)
+			continue
+		}
+		if err := h.invoiceRepo.UpdateMidtransStatus(c.Request.Context(), inv.MidtransOrderID, status.TransactionStatus, status.PaymentType, status.TransactionID); err != nil {
+			log.Printf("[SyncPending] update error for %s: %v", inv.MidtransOrderID, err)
+			continue
+		}
+		// Auto-update partnership progress on settlement
+		if status.TransactionStatus == "settlement" || status.TransactionStatus == "capture" {
+			h.autoUpdatePartnershipProgress(c.Request.Context(), inv.PartnershipID)
+		}
+		synced++
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success":        true,
+		"expired_count":  expired,
+		"synced_count":   synced,
+		"pending_checked": len(pendingInvoices),
+		"message":        fmt.Sprintf("Expired: %d, Synced: %d/%d invoices", expired, synced, len(pendingInvoices)),
+	})
+}
+
+// StartExpiryScheduler — background goroutine that auto-expires invoices every 5 minutes
+func (h *InvoiceHandler) StartExpiryScheduler() {
+	go func() {
+		ticker := time.NewTicker(5 * time.Minute)
+		defer ticker.Stop()
+
+		// Run once immediately on startup
+		h.runExpiryCheck()
+
+		for range ticker.C {
+			h.runExpiryCheck()
+		}
+	}()
+	log.Println("🔄 Invoice expiry scheduler started (every 5 minutes)")
+}
+
+func (h *InvoiceHandler) runExpiryCheck() {
+	ctx := context.Background()
+	count, err := h.invoiceRepo.ExpirePendingInvoices(ctx)
+	if err != nil {
+		log.Printf("[ExpiryScheduler] error: %v", err)
+		return
+	}
+	if count > 0 {
+		log.Printf("[ExpiryScheduler] auto-expired %d invoice(s)", count)
+	}
+}
+
+// autoUpdatePartnershipProgress calculates and updates partnership progress
+// based on the current state of all invoices for that partnership.
+func (h *InvoiceHandler) autoUpdatePartnershipProgress(ctx context.Context, partnershipID uuid.UUID) {
+	invoices, err := h.invoiceRepo.FindByPartnershipID(ctx, partnershipID)
+	if err != nil || len(invoices) == 0 {
+		return
+	}
+
+	hasDPPaid := false
+	allPaid := true
+	for _, inv := range invoices {
+		if inv.Status == entity.InvoiceStatusPaid {
+			if inv.Type == entity.InvoiceTypeDP {
+				hasDPPaid = true
+			}
+		} else if inv.Status == entity.InvoiceStatusPending {
+			allPaid = false
+		}
+	}
+
+	var progress int
+	var status string
+
+	if allPaid && hasDPPaid {
+		// All invoices paid → at least DP_VERIFIED, check further
+		progress = 50
+		status = entity.PartnershipStatusAgreementSigned
+	} else if hasDPPaid {
+		// DP paid, other invoices pending
+		progress = 25
+		status = entity.PartnershipStatusDPVerified
+	} else {
+		// No DP paid yet
+		return
+	}
+
+	// Only upgrade, never downgrade
+	p, err := h.partnershipRepo.FindByID(ctx, partnershipID)
+	if err != nil {
+		return
+	}
+
+	if progress > p.ProgressPercentage {
+		if err := h.partnershipRepo.UpdateProgress(ctx, partnershipID, progress, status); err != nil {
+			log.Printf("[AutoProgress] failed to update partnership %s: %v", partnershipID, err)
+		} else {
+			log.Printf("[AutoProgress] partnership %s → %s (%d%%)", partnershipID, status, progress)
+		}
+	}
 }

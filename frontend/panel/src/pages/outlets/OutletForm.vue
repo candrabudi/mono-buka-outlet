@@ -247,7 +247,7 @@
                 <div class="form-field">
                   <label class="form-field-label">Gambar Paket</label>
                   <div v-if="pkgForm.image" class="media-preview banner-preview">
-                    <img :src="pkgForm.image" alt="Paket" @error="pkgForm.image = ''" />
+                    <img :src="pkgForm.image" alt="Paket" @error="onImgError($event)" />
                     <button type="button" class="media-remove-btn" @click="pkgForm.image = ''">&times;</button>
                   </div>
                   <div v-else class="upload-dropzone upload-dropzone-sm" @click="$refs.pkgImageInput.click()">
@@ -310,11 +310,12 @@
               <div class="form-field">
                 <label class="form-field-label-sm">Logo</label>
                 <div v-if="form.logo" class="media-preview">
-                  <img :src="form.logo" alt="Logo" @error="form.logo = ''" />
+                  <img :src="form.logo" alt="Logo" @error="onImgError($event)" />
                   <button type="button" class="media-remove-btn" @click="form.logo = ''" title="Hapus">&times;</button>
                 </div>
-                <div v-else class="upload-dropzone" @click="$refs.logoInput.click()">
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                <div v-else class="upload-dropzone" :class="{ 'is-uploading': uploadingLogo }" @click="!uploadingLogo && $refs.logoInput.click()">
+                  <svg v-if="!uploadingLogo" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                  <svg v-else class="spin-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2.5"><path d="M21 12a9 9 0 1 1-6.219-8.56" stroke-linecap="round"/></svg>
                   <span>{{ uploadingLogo ? 'Mengunggah...' : 'Upload Logo' }}</span>
                 </div>
                 <input ref="logoInput" type="file" accept="image/*" style="display:none" @change="handleUpload($event, 'logo')" />
@@ -322,11 +323,12 @@
               <div class="form-field">
                 <label class="form-field-label-sm">Banner</label>
                 <div v-if="form.banner" class="media-preview banner-preview">
-                  <img :src="form.banner" alt="Banner" @error="form.banner = ''" />
+                  <img :src="form.banner" alt="Banner" @error="onImgError($event)" />
                   <button type="button" class="media-remove-btn" @click="form.banner = ''" title="Hapus">&times;</button>
                 </div>
-                <div v-else class="upload-dropzone" @click="$refs.bannerInput.click()">
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                <div v-else class="upload-dropzone" :class="{ 'is-uploading': uploadingBanner }" @click="!uploadingBanner && $refs.bannerInput.click()">
+                  <svg v-if="!uploadingBanner" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                  <svg v-else class="spin-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2.5"><path d="M21 12a9 9 0 1 1-6.219-8.56" stroke-linecap="round"/></svg>
                   <span>{{ uploadingBanner ? 'Mengunggah...' : 'Upload Banner' }}</span>
                 </div>
                 <input ref="bannerInput" type="file" accept="image/*" style="display:none" @change="handleUpload($event, 'banner')" />
@@ -444,14 +446,34 @@ async function handleUpload(event, field) {
   if (!file) return
   const loading = field === 'logo' ? uploadingLogo : uploadingBanner
   loading.value = true
+  // Show local preview immediately
+  const localPreview = URL.createObjectURL(file)
+  form[field] = localPreview
   try {
     const { data } = await uploadApi.upload(file)
-    form[field] = data.data.url
+    const serverUrl = data.data?.url || data.url || ''
+    if (serverUrl) {
+      form[field] = serverUrl
+    }
   } catch (e) {
     toast.error(e.response?.data?.error || 'Gagal mengunggah file')
+    form[field] = '' // clear on actual upload failure
   } finally {
     loading.value = false
     event.target.value = ''
+    URL.revokeObjectURL(localPreview)
+  }
+}
+
+function onImgError(event) {
+  // Show a gray placeholder instead of clearing the URL
+  event.target.style.display = 'none'
+  const parent = event.target.parentElement
+  if (parent && !parent.querySelector('.img-fallback')) {
+    const fallback = document.createElement('div')
+    fallback.className = 'img-fallback'
+    fallback.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>'
+    parent.insertBefore(fallback, event.target)
   }
 }
 
@@ -622,12 +644,19 @@ function saveAndAddAnother() {
 async function handlePkgImageUpload(event) {
   const file = event.target.files?.[0]
   if (!file) return
+  const localPreview = URL.createObjectURL(file)
+  pkgForm.image = localPreview
   try {
     const { data } = await uploadApi.upload(file)
-    pkgForm.image = data.data.url
+    const serverUrl = data.data?.url || data.url || ''
+    if (serverUrl) pkgForm.image = serverUrl
   } catch (e) {
     toast.error(e.response?.data?.error || 'Gagal mengunggah')
-  } finally { event.target.value = '' }
+    pkgForm.image = ''
+  } finally {
+    event.target.value = ''
+    URL.revokeObjectURL(localPreview)
+  }
 }
 
 function formatCurrency(v) {
@@ -799,7 +828,11 @@ textarea.form-field-input { resize: vertical; min-height: 60px; }
 }
 .upload-dropzone:hover { border-color: #6366f1; background: rgba(99,102,241,.03); color: #6366f1; }
 .upload-dropzone:hover svg { stroke: #6366f1; }
+.upload-dropzone.is-uploading { border-color: #c7d2fe; background: #eef2ff; cursor: wait; }
 .upload-dropzone-sm { padding: 12px 10px; }
+.img-fallback { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: #f1f5f9; }
+.spin-icon { animation: spin 0.8s linear infinite; }
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
 /* ═══ RICH TEXT EDITOR ═══ */
 .rte-wrapper { border: 1.5px solid #e2e8f0; border-radius: 10px; overflow: hidden; transition: border-color 0.2s; }

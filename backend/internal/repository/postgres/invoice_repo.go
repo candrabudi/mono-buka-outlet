@@ -155,3 +155,45 @@ func (r *InvoiceRepo) GenerateInvoiceNumber(ctx context.Context) (string, error)
 	now := time.Now()
 	return fmt.Sprintf("INV-%s-%04d", now.Format("20060102"), count+1), nil
 }
+
+// FindPendingWithMidtrans — returns all PENDING invoices that have a midtrans_order_id (for status sync)
+func (r *InvoiceRepo) FindPendingWithMidtrans(ctx context.Context) ([]*entity.Invoice, error) {
+	query := `SELECT id, partnership_id, invoice_number, COALESCE(type,'INVOICE'), amount, description, status,
+			  COALESCE(midtrans_order_id,''), COALESCE(midtrans_snap_token,''), COALESCE(midtrans_redirect_url,''),
+			  COALESCE(midtrans_payment_type,''), COALESCE(midtrans_transaction_id,''), COALESCE(midtrans_transaction_status,''),
+			  COALESCE(proof_url,''), paid_at, expired_at, created_at, updated_at
+			  FROM invoices
+			  WHERE status = 'PENDING' AND midtrans_order_id != '' AND midtrans_order_id IS NOT NULL
+			  ORDER BY created_at DESC`
+	rows, err := r.db.QueryContext(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var invoices []*entity.Invoice
+	for rows.Next() {
+		inv := &entity.Invoice{}
+		if err := rows.Scan(
+			&inv.ID, &inv.PartnershipID, &inv.InvoiceNumber, &inv.Type, &inv.Amount, &inv.Description, &inv.Status,
+			&inv.MidtransOrderID, &inv.MidtransSnapToken, &inv.MidtransRedirectURL,
+			&inv.MidtransPaymentType, &inv.MidtransTransactionID, &inv.MidtransTransactionStatus,
+			&inv.ProofURL, &inv.PaidAt, &inv.ExpiredAt, &inv.CreatedAt, &inv.UpdatedAt); err != nil {
+			return nil, err
+		}
+		invoices = append(invoices, inv)
+	}
+	return invoices, nil
+}
+
+// ExpirePendingInvoices — auto-expire PENDING invoices past their expired_at time
+func (r *InvoiceRepo) ExpirePendingInvoices(ctx context.Context) (int64, error) {
+	query := `UPDATE invoices SET status = 'EXPIRED', updated_at = $1
+			  WHERE status = 'PENDING' AND expired_at IS NOT NULL AND expired_at < $2`
+	now := time.Now()
+	res, err := r.db.ExecContext(ctx, query, now, now)
+	if err != nil {
+		return 0, err
+	}
+	return res.RowsAffected()
+}

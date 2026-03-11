@@ -7,7 +7,7 @@ import (
 )
 
 // Brand is kept as a minimal struct for backward compatibility with existing
-// tables (leads, partnerships, payments, revenues) that still reference brand_id.
+// tables (partnerships, payments, revenues) that still reference brand_id.
 // The Brand CRUD feature has been removed from the admin panel.
 type Brand struct {
 	ID                      uuid.UUID  `json:"id"`

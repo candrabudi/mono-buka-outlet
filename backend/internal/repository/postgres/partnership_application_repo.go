@@ -40,7 +40,7 @@ func (r *PartnershipApplicationRepo) FindByID(ctx context.Context, id uuid.UUID)
 		       a.status, a.admin_notes, a.reviewed_by, a.reviewed_at,
 		       a.created_at, a.updated_at,
 		       u.id, u.name, u.email, u.phone,
-		       o.id, o.name, o.slug, o.logo, o.minimum_investment,
+		       o.id, o.name, COALESCE(o.slug,''), COALESCE(o.logo,''), o.minimum_investment,
 		       p.id, p.name, p.price
 		FROM partnership_applications a
 		JOIN users u ON u.id = a.mitra_id
@@ -92,7 +92,7 @@ func (r *PartnershipApplicationRepo) FindByMitraID(ctx context.Context, mitraID 
 		       a.contact_phone, a.contact_email,
 		       a.status, a.admin_notes, a.reviewed_at,
 		       a.created_at, a.updated_at,
-		       o.id, o.name, o.slug, o.logo, o.minimum_investment,
+		       o.id, o.name, COALESCE(o.slug,''), COALESCE(o.logo,''), o.minimum_investment,
 		       p.id, p.name, p.price
 		FROM partnership_applications a
 		JOIN outlets o ON o.id = a.outlet_id
@@ -145,7 +145,7 @@ func (r *PartnershipApplicationRepo) FindAll(ctx context.Context, status string,
 		       a.status, a.admin_notes, a.reviewed_at,
 		       a.created_at, a.updated_at,
 		       u.id, u.name, u.email, u.phone,
-		       o.id, o.name, o.slug, o.logo,
+		       o.id, o.name, COALESCE(o.slug,''), COALESCE(o.logo,''),
 		       p.id, p.name, p.price
 		FROM partnership_applications a
 		JOIN users u ON u.id = a.mitra_id

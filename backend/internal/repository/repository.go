@@ -11,9 +11,11 @@ type UserRepository interface {
 	Create(ctx context.Context, user *entity.User) error
 	FindByID(ctx context.Context, id uuid.UUID) (*entity.User, error)
 	FindByEmail(ctx context.Context, email string) (*entity.User, error)
+	FindByReferralCode(ctx context.Context, code string) (*entity.User, error)
 	FindAll(ctx context.Context, role string, page, limit int) ([]*entity.User, int, error)
 	Update(ctx context.Context, user *entity.User) error
 	Delete(ctx context.Context, id uuid.UUID) error
+	CountByRole(ctx context.Context, role string) (int, error)
 }
 
 type OutletCategoryRepository interface {
@@ -45,15 +47,7 @@ type OutletFilter struct {
 	Limit      int
 }
 
-type LeadRepository interface {
-	Create(ctx context.Context, lead *entity.Lead) error
-	FindByID(ctx context.Context, id uuid.UUID) (*entity.Lead, error)
-	FindAll(ctx context.Context, brandID *uuid.UUID, status string, page, limit int) ([]*entity.Lead, int, error)
-	FindByBrandGrouped(ctx context.Context, brandID *uuid.UUID) (map[string][]*entity.Lead, error)
-	Update(ctx context.Context, lead *entity.Lead) error
-	UpdateStatus(ctx context.Context, id uuid.UUID, status string, progress int) error
-	Delete(ctx context.Context, id uuid.UUID) error
-}
+
 
 type LocationRepository interface {
 	Create(ctx context.Context, location *entity.Location) error
@@ -68,6 +62,7 @@ type PartnershipRepository interface {
 	FindByID(ctx context.Context, id uuid.UUID) (*entity.Partnership, error)
 	FindAll(ctx context.Context, brandID *uuid.UUID, mitraID *uuid.UUID, page, limit int) ([]*entity.Partnership, int, error)
 	FindByMitraID(ctx context.Context, mitraID uuid.UUID) ([]*entity.Partnership, error)
+	FindByAffiliatorID(ctx context.Context, affiliatorID uuid.UUID, page, limit int) ([]*entity.Partnership, int, error)
 	Update(ctx context.Context, partnership *entity.Partnership) error
 	UpdateProgress(ctx context.Context, id uuid.UUID, progress int, status string) error
 }
@@ -109,11 +104,9 @@ type NotificationRepository interface {
 }
 
 type DashboardRepository interface {
-	GetTotalLeads(ctx context.Context, brandID *uuid.UUID) (int, error)
 	GetActiveMitra(ctx context.Context, brandID *uuid.UUID) (int, error)
 	GetTotalInvestment(ctx context.Context, brandID *uuid.UUID) (float64, error)
 	GetMonthlyRevenue(ctx context.Context, brandID *uuid.UUID, month string) (float64, error)
-	GetLeadsByStatus(ctx context.Context, brandID *uuid.UUID) (map[string]int, error)
 	GetRevenueChart(ctx context.Context, brandID *uuid.UUID, months int) ([]map[string]interface{}, error)
 }
 
@@ -169,6 +162,8 @@ type InvoiceRepository interface {
 	UpdateMidtransStatus(ctx context.Context, orderID string, txnStatus, paymentType, txnID string) error
 	ManualApprove(ctx context.Context, id uuid.UUID, proofURL string) error
 	GenerateInvoiceNumber(ctx context.Context) (string, error)
+	FindPendingWithMidtrans(ctx context.Context) ([]*entity.Invoice, error)
+	ExpirePendingInvoices(ctx context.Context) (int64, error)
 }
 
 type PartnershipApplicationRepository interface {

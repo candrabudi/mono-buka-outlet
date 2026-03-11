@@ -65,6 +65,7 @@ func (s *Seeder) seedUsers() error {
 		{"Mitra Demo", "mitra@bukaoutlet.com", "081234567895", "mitra"},
 		{"Ahmad Rizki", "ahmad@bukaoutlet.com", "081234567896", "admin"},
 		{"Siti Nurhaliza", "siti@bukaoutlet.com", "081234567897", "mitra"},
+		{"Affiliator Demo", "affiliator@bukaoutlet.com", "081234567898", "affiliator"},
 	}
 
 	for _, u := range users {

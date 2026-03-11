@@ -35,3 +35,6 @@ npm-debug.log*
 # Agent
 .agent/
 backend/api
+
+# Private
+bankco/

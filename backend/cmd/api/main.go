@@ -75,7 +75,6 @@ func main() {
 	outletRepo := postgres.NewOutletRepo(db)
 	outletCategoryRepo := postgres.NewOutletCategoryRepo(db)
 	outletPackageRepo := postgres.NewOutletPackageRepo(db)
-	leadRepo := postgres.NewLeadRepo(db)
 	partnershipRepo := postgres.NewPartnershipRepo(db)
 	paymentRepo := postgres.NewPaymentRepo(db)
 	agreementRepo := postgres.NewAgreementRepo(db)
@@ -106,7 +105,6 @@ func main() {
 	outletUC := usecase.NewOutletUseCase(outletRepo, outletCategoryRepo)
 	outletCategoryUC := usecase.NewOutletCategoryUseCase(outletCategoryRepo)
 	outletPackageUC := usecase.NewOutletPackageUseCase(outletPackageRepo)
-	leadUC := usecase.NewLeadUseCase(leadRepo, activityLogRepo)
 	partnershipUC := usecase.NewPartnershipUseCase(partnershipRepo, activityLogRepo)
 	paymentUC := usecase.NewPaymentUseCase(paymentRepo, partnershipRepo, activityLogRepo)
 	agreementUC := usecase.NewAgreementUseCase(agreementRepo, partnershipRepo, activityLogRepo)
@@ -117,6 +115,10 @@ func main() {
 	chatService := chatbot.NewService(db, cfg.OpenAI.APIKey)
 	aiKnowledgeRepo := postgres.NewAIKnowledgeRepo(db)
 
+	affiliatorUC := usecase.NewAffiliatorUseCase(userRepo, partnershipRepo)
+
+	invoiceHandler := handler.NewInvoiceHandler(invoiceRepo, partnershipRepo, settingRepo, midtrans.NewService(settingRepo))
+
 	handlers := router.Handlers{
 		Auth:      handler.NewAuthHandler(authUC),
 		AdminAuth: handler.NewAdminAuthHandler(adminAuthUC),
@@ -124,7 +126,7 @@ func main() {
 
 		Outlet:         handler.NewOutletHandler(outletUC),
 		OutletCategory: handler.NewOutletCategoryHandler(outletCategoryUC),
-		Lead:           handler.NewLeadHandler(leadUC),
+
 		Partnership:    handler.NewPartnershipHandler(partnershipUC),
 		Payment:        handler.NewPaymentHandler(paymentUC),
 		Agreement:      handler.NewAgreementHandler(agreementUC),
@@ -134,12 +136,13 @@ func main() {
 		OutletPackage:  handler.NewOutletPackageHandler(outletPackageUC),
 		Meeting:        handler.NewMeetingHandler(meetingUC, cfg.Upload.Dir, cfg.App.URL),
 		Setting:        handler.NewSettingHandler(settingRepo),
-		Invoice:        handler.NewInvoiceHandler(invoiceRepo, partnershipRepo, settingRepo, midtrans.NewService(settingRepo)),
+		Invoice:        invoiceHandler,
 		LocationSub:    handler.NewLocationSubmissionHandler(locationSubRepo),
 		Ebook:          handler.NewEbookHandler(ebookRepo, ebookOrderRepo, settingRepo, midtrans.NewService(settingRepo), cfg.Upload.Dir),
 		EbookCategory:  handler.NewEbookCategoryHandler(ebookCategoryRepo),
 		Chat:           handler.NewChatHandler(chatService),
 		AIAdmin:        handler.NewAIAdminHandler(aiKnowledgeRepo, chatService),
+		Affiliator:     handler.NewAffiliatorHandler(affiliatorUC),
 	}
 
 	if cfg.App.Env == "production" {
@@ -151,6 +154,9 @@ func main() {
 
 	os.MkdirAll(cfg.Upload.Dir, os.ModePerm)
 	r.Static("/uploads", cfg.Upload.Dir)
+
+	// Start background invoice expiry scheduler
+	invoiceHandler.StartExpiryScheduler()
 
 	log.Printf("🚀 Server starting on port %s", cfg.App.Port)
 	if err := r.Run(":" + cfg.App.Port); err != nil {

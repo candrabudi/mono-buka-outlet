@@ -88,7 +88,7 @@
           </div>
           <div v-else-if="form.file_url" class="file-uploaded">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#22c55e"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" stroke-width="2"/><polyline points="22 4 12 14.01 9 11.01" stroke-width="2"/></svg>
-            <span>File PDF sudah diupload ✅</span>
+            <span>File PDF sudah diupload</span>
           </div>
           <div v-else class="upload-placeholder">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#94a3b8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" stroke-width="2"/><polyline points="14 2 14 8 20 8" stroke-width="2"/></svg>

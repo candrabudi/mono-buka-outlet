@@ -46,7 +46,7 @@
         <div class="db-kpi orange">
           <div class="db-kpi-icon"><i class="ri-money-dollar-circle-fill"></i></div>
           <div class="db-kpi-info">
-            <span class="db-kpi-label">Total Income</span>
+            <span class="db-kpi-label">Total Pendapatan</span>
             <span class="db-kpi-value">{{ fcShort(s.total_income_amount) }}</span>
           </div>
         </div>
@@ -101,8 +101,8 @@
         </div>
       </div>
 
-      <!-- Row: Pengajuan + Invoice + Lead -->
-      <div class="db-row-3">
+      <!-- Row: Pengajuan + Invoice -->
+      <div class="db-row-2">
         <!-- Pengajuan -->
         <div class="db-card">
           <div class="db-card-head">
@@ -114,7 +114,7 @@
               <div class="db-app-tile pending">
                 <i class="ri-time-fill"></i>
                 <span class="db-app-num">{{ appStat('PENDING') }}</span>
-                <span class="db-app-lbl">Pending</span>
+                <span class="db-app-lbl">Menunggu</span>
               </div>
               <div class="db-app-tile review">
                 <i class="ri-search-eye-fill"></i>
@@ -174,26 +174,6 @@
             </div>
           </div>
         </div>
-
-        <!-- Lead Pipeline -->
-        <div class="db-card">
-          <div class="db-card-head">
-            <h3><i class="ri-user-follow-fill"></i> Lead Pipeline</h3>
-          </div>
-          <div class="db-card-body">
-            <div v-if="s.leads_by_status && Object.keys(s.leads_by_status).length" class="db-lead-list">
-              <div v-for="(count, status) in s.leads_by_status" :key="status" class="db-lead-row">
-                <div class="db-lead-dot" :style="{background: leadColor(status)}"></div>
-                <span class="db-lead-name">{{ formatStatus(status) }}</span>
-                <div class="db-lead-bar-track">
-                  <div class="db-lead-bar-fill" :style="{ width: pipePct(count) + '%', background: leadColor(status) }"></div>
-                </div>
-                <span class="db-lead-count">{{ count }}</span>
-              </div>
-            </div>
-            <div v-else class="db-empty sm"><i class="ri-user-add-line"></i><span>Belum ada leads</span></div>
-          </div>
-        </div>
       </div>
 
     </template>
@@ -232,15 +212,11 @@ function fcShort(v) {
 function formatStatus(st) { return st.replace(/_/g, ' ') }
 function appStat(status) { return (s.value.applications_by_status || {})[status] || 0 }
 function psLabel(st) {
-  const map = { PENDING: 'Pending', ACTIVE: 'Active', RUNNING: 'Running', COMPLETED: 'Selesai', CANCELLED: 'Batal', AGREEMENT_SIGNED: 'Agreement' }
+  const map = { PENDING: 'Menunggu', ACTIVE: 'Aktif', RUNNING: 'Berjalan', COMPLETED: 'Selesai', CANCELLED: 'Dibatalkan', AGREEMENT_SIGNED: 'Perjanjian', DP_VERIFIED: 'DP Terverifikasi', DEVELOPMENT: 'Pembangunan' }
   return map[st] || st
 }
 function psColor(st) {
   const map = { PENDING: '#f59e0b', ACTIVE: '#3b82f6', RUNNING: '#6366f1', COMPLETED: '#22c55e', CANCELLED: '#ef4444', AGREEMENT_SIGNED: '#8b5cf6' }
-  return map[st] || '#94a3b8'
-}
-function leadColor(st) {
-  const map = { NEW: '#3b82f6', RUNNING: '#22c55e', COMPLETED: '#10b981', DP_PAID: '#f59e0b', FULLY_PAID: '#8b5cf6' }
   return map[st] || '#94a3b8'
 }
 
@@ -249,10 +225,6 @@ const invoicePaidPct = computed(() => {
   return total ? Math.round((s.value.paid_invoices / total) * 100) : 0
 })
 
-function pipePct(count) {
-  const max = Math.max(...Object.values(s.value.leads_by_status || { x: 1 }))
-  return max ? (count / max) * 100 : 0
-}
 
 // Revenue Bar Chart
 const revenueChartData = computed(() => {
@@ -342,6 +314,9 @@ const donutOptions = {
 /* 2:1 Row */
 .db-row-2-1 { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-bottom: 16px; }
 
+/* 2 Column Row */
+.db-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+
 /* 3 Column Row */
 .db-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 16px; }
 
@@ -389,14 +364,7 @@ const donutOptions = {
 .db-fin-fill { height: 100%; background: linear-gradient(90deg, #22c55e, #10b981); border-radius: 10px; transition: width .6s; }
 .db-fin-info { display: flex; justify-content: space-between; font-size: .68rem; color: #94a3b8; }
 
-/* Lead Pipeline */
-.db-lead-list { display: flex; flex-direction: column; gap: 8px; }
-.db-lead-row { display: flex; align-items: center; gap: 8px; }
-.db-lead-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-.db-lead-name { font-size: .75rem; font-weight: 600; color: #475569; min-width: 70px; text-transform: uppercase; font-size: .68rem; }
-.db-lead-bar-track { flex: 1; height: 6px; background: #f1f5f9; border-radius: 10px; overflow: hidden; }
-.db-lead-bar-fill { height: 100%; border-radius: 10px; transition: width .5s; min-width: 4px; }
-.db-lead-count { font-size: .82rem; font-weight: 800; color: #0f172a; min-width: 22px; text-align: right; }
+
 
 /* Quick Actions */
 .db-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }

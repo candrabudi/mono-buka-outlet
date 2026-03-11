@@ -83,3 +83,23 @@ func (h *PartnershipHandler) GetMyPartnerships(c *gin.Context) {
 func (h *PartnershipHandler) GetByMitra(c *gin.Context) {
 	h.GetMyPartnerships(c)
 }
+
+// UpdateStatus — admin manually updates partnership status & progress
+func (h *PartnershipHandler) UpdateStatus(c *gin.Context) {
+	id, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "ID tidak valid"})
+		return
+	}
+	var req usecase.UpdatePartnershipStatusRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	p, err := h.partnershipUC.UpdateStatus(c.Request.Context(), id, req)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"success": true, "data": p, "message": "Status partnership berhasil diupdate"})
+}

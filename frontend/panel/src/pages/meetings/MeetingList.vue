@@ -381,7 +381,7 @@ function statusLabel(s) { return statusLabels[s] || s }
 
 function formatDate(d) { if(!d) return '-'; return new Date(d).toLocaleDateString('id-ID',{weekday:'short',day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}) }
 function formatShort(d) { if(!d) return '-'; return new Date(d).toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'}) }
-function fileIcon(t) { const icons={pdf:'📄',docx:'📝',doc:'📝',xlsx:'📊',xls:'📊',jpg:'🖼',jpeg:'🖼',png:'🖼'}; return icons[t]||'📎' }
+function fileIcon(t) { const icons={pdf:'PDF',docx:'DOC',doc:'DOC',xlsx:'XLS',xls:'XLS',jpg:'IMG',jpeg:'IMG',png:'IMG'}; return icons[t]||'FILE' }
 
 const filtered = computed(() => {
   let list = meetings.value

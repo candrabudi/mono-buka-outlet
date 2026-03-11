@@ -191,3 +191,59 @@ func (s *Service) CreateSnapTransaction(ctx context.Context, req SnapRequest) (*
 
 	return &snapResp, nil
 }
+
+// TransactionStatusResponse — response from Midtrans Status API
+type TransactionStatusResponse struct {
+	TransactionID     string `json:"transaction_id"`
+	OrderID           string `json:"order_id"`
+	TransactionStatus string `json:"transaction_status"`
+	PaymentType       string `json:"payment_type"`
+	StatusCode        string `json:"status_code"`
+	GrossAmount       string `json:"gross_amount"`
+	SignatureKey      string `json:"signature_key"`
+	FraudStatus       string `json:"fraud_status"`
+	TransactionTime   string `json:"transaction_time"`
+	SettlementTime    string `json:"settlement_time"`
+	ExpiryTime        string `json:"expiry_time"`
+	StatusMessage     string `json:"status_message"`
+}
+
+// GetTransactionStatus — check real-time status from Midtrans API
+func (s *Service) GetTransactionStatus(ctx context.Context, orderID string) (*TransactionStatusResponse, error) {
+	serverKey, _, err := s.getConfig(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	// Midtrans status API uses api.sandbox.midtrans.com, not app.sandbox.midtrans.com
+	envSetting, _ := s.settingRepo.FindByKey(ctx, "midtrans_environment")
+	apiBase := "https://api.sandbox.midtrans.com"
+	if envSetting != nil && envSetting.Value == "production" {
+		apiBase = "https://api.midtrans.com"
+	}
+
+	url := fmt.Sprintf("%s/v2/%s/status", apiBase, orderID)
+	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	authStr := base64.StdEncoding.EncodeToString([]byte(serverKey + ":"))
+	req.Header.Set("Authorization", "Basic "+authStr)
+	req.Header.Set("Accept", "application/json")
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("midtrans status check failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	respBody, _ := io.ReadAll(resp.Body)
+
+	var status TransactionStatusResponse
+	if err := json.Unmarshal(respBody, &status); err != nil {
+		return nil, fmt.Errorf("failed to parse midtrans status: %w", err)
+	}
+
+	return &status, nil
+}

@@ -4,18 +4,18 @@
     <div class="mitra-hero">
       <div class="mitra-hero-content">
         <div>
-          <h1 class="mitra-hero-title">Management Leader</h1>
-          <p class="mitra-hero-sub">Kelola data leader yang menangani mitra</p>
+          <h1 class="mitra-hero-title">Management Affiliator</h1>
+          <p class="mitra-hero-sub">Kelola data affiliator yang mengelola referral</p>
         </div>
         <button @click="openCreate" class="mitra-add-btn">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="12" y1="5" x2="12" y2="19" stroke-width="2" stroke-linecap="round"/><line x1="5" y1="12" x2="19" y2="12" stroke-width="2" stroke-linecap="round"/></svg>
-          Tambah Leader
+          <Plus :size="18" />
+          Tambah Affiliator
         </button>
       </div>
       <div class="mitra-stats-bar">
         <div class="mitra-stat">
           <span class="mitra-stat-dot dot-total"></span>
-          <span class="mitra-stat-label">Total Leader</span>
+          <span class="mitra-stat-label">Total Affiliator</span>
           <span class="mitra-stat-value">{{ total }}</span>
         </div>
         <div class="mitra-stat">
@@ -34,7 +34,7 @@
     <!-- Search & Filter -->
     <div class="mitra-toolbar">
       <div class="mitra-search-wrap">
-        <svg class="mitra-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <Search class="mitra-search-icon" :size="16" color="#94a3b8" />
         <input v-model="searchQuery" type="text" class="mitra-search" placeholder="Cari nama, email, atau telepon..." />
       </div>
     </div>
@@ -63,11 +63,11 @@
           <h3 class="mitra-card-name">{{ m.name }}</h3>
           <div class="mitra-card-info">
             <div class="mitra-info-row">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+              <Mail :size="14" color="#94a3b8" />
               <span>{{ m.email }}</span>
             </div>
             <div class="mitra-info-row">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.12.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.36 1.85.64 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+              <Phone :size="14" color="#94a3b8" />
               <span>{{ m.phone || '-' }}</span>
             </div>
           </div>
@@ -80,10 +80,10 @@
           </span>
           <div class="mitra-card-btns">
             <button @click="openEdit(m)" class="mitra-icon-btn edit-btn" title="Edit">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" stroke-width="2"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" stroke-width="2"/></svg>
+              <Pencil :size="14" />
             </button>
             <button @click="confirmDelete(m)" class="mitra-icon-btn del-btn" title="Hapus">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="3 6 5 6 21 6" stroke-width="2"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" stroke-width="2"/></svg>
+              <Trash2 :size="14" />
             </button>
           </div>
         </div>
@@ -97,11 +97,11 @@
     <!-- Empty state -->
     <div v-else class="mitra-empty">
       <div class="mitra-empty-circle">
-        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <Users :size="36" color="#94a3b8" :stroke-width="1.5" />
       </div>
-      <h3>Belum ada leader</h3>
-      <p>Tambahkan leader pertama untuk memulai.</p>
-      <button @click="openCreate" class="mitra-add-btn" style="margin-top:20px;font-size:0.82rem;">+ Tambah Leader</button>
+      <h3>Belum ada affiliator</h3>
+      <p>Tambahkan affiliator pertama untuk memulai.</p>
+      <button @click="openCreate" class="mitra-add-btn" style="margin-top:20px;font-size:0.82rem;">+ Tambah Affiliator</button>
     </div>
 
     <!-- Modal Create/Edit -->
@@ -111,16 +111,16 @@
           <div class="mitra-modal-header">
             <div class="mitra-modal-title-group">
               <div class="mitra-modal-icon">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                <User :size="20" />
               </div>
-              <h3>{{ editItem ? 'Edit Leader' : 'Tambah Leader Baru' }}</h3>
+              <h3>{{ editItem ? 'Edit Affiliator' : 'Tambah Affiliator Baru' }}</h3>
             </div>
-            <button @click="closeModal" class="mitra-modal-close">&times;</button>
+            <button @click="closeModal" class="mitra-modal-close"><X :size="18" /></button>
           </div>
           <form @submit.prevent="handleSave" class="mitra-modal-body">
             <div class="mitra-form-group">
               <label>Nama Lengkap <span class="req">*</span></label>
-              <input v-model="form.name" type="text" class="mitra-input" :class="{ 'is-error': formErrors.name }" placeholder="Nama lengkap leader" />
+              <input v-model="form.name" type="text" class="mitra-input" :class="{ 'is-error': formErrors.name }" placeholder="Nama lengkap affiliator" />
               <div v-if="formErrors.name" class="mitra-field-error">{{ formErrors.name }}</div>
             </div>
             <div class="mitra-form-row">
@@ -141,8 +141,8 @@
                 <div class="mitra-pw-wrap">
                   <input v-model="form.password" :type="showPassword ? 'text' : 'password'" class="mitra-input mitra-pw-input" :class="{ 'is-error': formErrors.password }" placeholder="Minimal 8 karakter" />
                   <button type="button" class="mitra-pw-toggle" @click="showPassword = !showPassword" tabindex="-1">
-                    <svg v-if="!showPassword" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                    <svg v-else width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                    <EyeOff v-if="showPassword" :size="18" color="#94a3b8" />
+                    <Eye v-else :size="18" color="#94a3b8" />
                   </button>
                 </div>
                 <div v-if="formErrors.password" class="mitra-field-error">{{ formErrors.password }}</div>
@@ -152,23 +152,23 @@
                 <div class="mitra-pw-wrap">
                   <input v-model="form.confirm_password" :type="showConfirmPassword ? 'text' : 'password'" class="mitra-input mitra-pw-input" :class="{ 'is-error': formErrors.confirm_password }" placeholder="Ulangi password" />
                   <button type="button" class="mitra-pw-toggle" @click="showConfirmPassword = !showConfirmPassword" tabindex="-1">
-                    <svg v-if="!showConfirmPassword" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                    <svg v-else width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                    <EyeOff v-if="showConfirmPassword" :size="18" color="#94a3b8" />
+                    <Eye v-else :size="18" color="#94a3b8" />
                   </button>
                 </div>
                 <div v-if="formErrors.confirm_password" class="mitra-field-error">{{ formErrors.confirm_password }}</div>
               </div>
             </div>
             <div v-if="form.password" class="mitra-pw-hints">
-              <div class="pw-hint" :class="{ 'pw-ok': form.password.length >= 8 }">✓ Minimal 8 karakter</div>
-              <div class="pw-hint" :class="{ 'pw-ok': /[A-Z]/.test(form.password) }">✓ Huruf besar</div>
-              <div class="pw-hint" :class="{ 'pw-ok': /[a-z]/.test(form.password) }">✓ Huruf kecil</div>
-              <div class="pw-hint" :class="{ 'pw-ok': /[0-9]/.test(form.password) }">✓ Angka</div>
+              <div class="pw-hint" :class="{ 'pw-ok': form.password.length >= 8 }">Minimal 8 karakter</div>
+              <div class="pw-hint" :class="{ 'pw-ok': /[A-Z]/.test(form.password) }">Huruf besar</div>
+              <div class="pw-hint" :class="{ 'pw-ok': /[a-z]/.test(form.password) }">Huruf kecil</div>
+              <div class="pw-hint" :class="{ 'pw-ok': /[0-9]/.test(form.password) }">Angka</div>
             </div>
             <div class="mitra-modal-footer">
               <button type="button" @click="closeModal" class="btn btn-secondary">Batal</button>
               <button type="submit" class="mitra-save-btn" :disabled="saving">
-                <svg v-if="saving" class="spin-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 12a9 9 0 1 1-6.219-8.56" stroke-width="2.5" stroke-linecap="round"/></svg>
+                <Loader2 v-if="saving" :size="16" class="spin-icon" />
                 {{ saving ? 'Menyimpan...' : (editItem ? 'Update' : 'Simpan') }}
               </button>
             </div>
@@ -183,10 +183,10 @@
         <div class="mitra-modal mitra-modal-sm" @click.stop>
           <div class="mitra-delete-body">
             <div class="mitra-delete-icon-wrap">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+              <Trash2 :size="24" color="#ef4444" />
             </div>
-            <h3>Hapus Leader</h3>
-            <p>Yakin ingin menghapus <strong>{{ deleteTarget.name }}</strong>?<br/>Data mitra akan dihapus secara permanen.</p>
+            <h3>Hapus Affiliator</h3>
+            <p>Yakin ingin menghapus <strong>{{ deleteTarget.name }}</strong>?<br/>Data affiliator akan dihapus secara permanen.</p>
           </div>
           <div class="mitra-delete-footer">
             <button @click="deleteTarget = null" class="btn btn-secondary">Batal</button>
@@ -202,6 +202,7 @@
 
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
+import { Plus, Search, Mail, Phone, Pencil, Trash2, User, Users, Eye, EyeOff, Loader2, X } from 'lucide-vue-next'
 import { userApi } from '../../services/api'
 import { useToastStore } from '../../stores/toast'
 
@@ -261,11 +262,11 @@ onMounted(() => loadMitras())
 async function loadMitras() {
   loading.value = true
   try {
-    const { data } = await userApi.list({ role: 'leader', limit: 100 })
+    const { data } = await userApi.list({ role: 'affiliator', limit: 100 })
     mitras.value = data.data || []
     total.value = data.total || 0
   } catch {
-    toast.error('Gagal memuat data leader')
+    toast.error('Gagal memuat data affiliator')
   } finally {
     loading.value = false
   }
@@ -337,19 +338,19 @@ async function handleSave() {
     if (editItem.value) {
       const payload = { name: form.name, email: form.email, phone: form.phone }
       if (form.password) payload.password = form.password
-      const { data } = await userApi.update(editItem.value.id, payload)
-      toast.success(data.message || 'Leader berhasil diupdate')
+      await userApi.update(editItem.value.id, payload)
+      toast.success('Affiliator berhasil diupdate')
     } else {
-      const { data } = await userApi.create({
+      await userApi.create({
         name: form.name, email: form.email, phone: form.phone,
-        password: form.password, confirm_password: form.confirm_password, role: 'leader',
+        password: form.password, confirm_password: form.confirm_password, role: 'affiliator',
       })
-      toast.success(data.message || 'Leader berhasil ditambah')
+      toast.success('Affiliator berhasil ditambahkan')
     }
     closeModal()
     loadMitras()
   } catch (e) {
-    toast.error(e.response?.data?.error || 'Gagal menyimpan leader')
+    toast.error(e.response?.data?.error || 'Gagal menyimpan affiliator')
   } finally {
     saving.value = false
   }
@@ -371,11 +372,11 @@ async function doDelete() {
   deleting.value = true
   try {
     const { data } = await userApi.delete(deleteTarget.value.id)
-    toast.success(data.message || 'Leader berhasil dihapus')
+    toast.success(data.message || 'Affiliator berhasil dihapus')
     deleteTarget.value = null
     loadMitras()
   } catch (e) {
-    toast.error(e.response?.data?.error || 'Gagal menghapus leader')
+    toast.error(e.response?.data?.error || 'Gagal menghapus affiliator')
   } finally {
     deleting.value = false
   }

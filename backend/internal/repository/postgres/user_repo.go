@@ -19,39 +19,54 @@ func NewUserRepo(db *sql.DB) *UserRepo {
 }
 
 func (r *UserRepo) Create(ctx context.Context, user *entity.User) error {
-	query := `INSERT INTO users (id, name, email, password, phone, role, is_active, created_at, updated_at) 
-			  VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`
+	query := `INSERT INTO users (id, name, email, password, phone, role, referral_code, is_active, created_at, updated_at) 
+			  VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`
 	_, err := r.db.ExecContext(ctx, query,
 		user.ID, user.Name, user.Email, user.Password, user.Phone,
-		user.Role, user.IsActive, user.CreatedAt, user.UpdatedAt,
+		user.Role, nilIfEmpty(user.ReferralCode), user.IsActive, user.CreatedAt, user.UpdatedAt,
 	)
 	return err
 }
 
+func nilIfEmpty(s string) interface{} {
+	if s == "" {
+		return nil
+	}
+	return s
+}
+
 func (r *UserRepo) FindByID(ctx context.Context, id uuid.UUID) (*entity.User, error) {
 	user := &entity.User{}
-	query := `SELECT id, name, email, password, phone, role, is_active, created_at, updated_at 
+	var referralCode sql.NullString
+	query := `SELECT id, name, email, password, phone, role, referral_code, is_active, created_at, updated_at 
 			  FROM users WHERE id = $1 AND deleted_at IS NULL`
 	err := r.db.QueryRowContext(ctx, query, id).Scan(
 		&user.ID, &user.Name, &user.Email, &user.Password, &user.Phone,
-		&user.Role, &user.IsActive, &user.CreatedAt, &user.UpdatedAt,
+		&user.Role, &referralCode, &user.IsActive, &user.CreatedAt, &user.UpdatedAt,
 	)
 	if err == sql.ErrNoRows {
 		return nil, fmt.Errorf("user not found")
+	}
+	if referralCode.Valid {
+		user.ReferralCode = referralCode.String
 	}
 	return user, err
 }
 
 func (r *UserRepo) FindByEmail(ctx context.Context, email string) (*entity.User, error) {
 	user := &entity.User{}
-	query := `SELECT id, name, email, password, phone, role, is_active, created_at, updated_at 
+	var referralCode sql.NullString
+	query := `SELECT id, name, email, password, phone, role, referral_code, is_active, created_at, updated_at 
 			  FROM users WHERE email = $1 AND deleted_at IS NULL`
 	err := r.db.QueryRowContext(ctx, query, email).Scan(
 		&user.ID, &user.Name, &user.Email, &user.Password, &user.Phone,
-		&user.Role, &user.IsActive, &user.CreatedAt, &user.UpdatedAt,
+		&user.Role, &referralCode, &user.IsActive, &user.CreatedAt, &user.UpdatedAt,
 	)
 	if err == sql.ErrNoRows {
 		return nil, fmt.Errorf("user not found")
+	}
+	if referralCode.Valid {
+		user.ReferralCode = referralCode.String
 	}
 	return user, err
 }
@@ -73,7 +88,7 @@ func (r *UserRepo) FindAll(ctx context.Context, role string, page, limit int) ([
 		return nil, 0, err
 	}
 
-	query := "SELECT id, name, email, phone, role, is_active, created_at, updated_at FROM users WHERE deleted_at IS NULL"
+	query := "SELECT id, name, email, phone, role, referral_code, is_active, created_at, updated_at FROM users WHERE deleted_at IS NULL"
 	queryArgs := []interface{}{}
 	queryArgIdx := 1
 
@@ -95,12 +110,16 @@ func (r *UserRepo) FindAll(ctx context.Context, role string, page, limit int) ([
 	var users []*entity.User
 	for rows.Next() {
 		user := &entity.User{}
+		var referralCode sql.NullString
 		err := rows.Scan(
 			&user.ID, &user.Name, &user.Email, &user.Phone,
-			&user.Role, &user.IsActive, &user.CreatedAt, &user.UpdatedAt,
+			&user.Role, &referralCode, &user.IsActive, &user.CreatedAt, &user.UpdatedAt,
 		)
 		if err != nil {
 			return nil, 0, err
+		}
+		if referralCode.Valid {
+			user.ReferralCode = referralCode.String
 		}
 		users = append(users, user)
 	}
@@ -109,12 +128,37 @@ func (r *UserRepo) FindAll(ctx context.Context, role string, page, limit int) ([
 }
 
 func (r *UserRepo) Update(ctx context.Context, user *entity.User) error {
-	query := `UPDATE users SET name = $1, email = $2, phone = $3, role = $4, is_active = $5, updated_at = $6, password = $7
-			  WHERE id = $8 AND deleted_at IS NULL`
+	query := `UPDATE users SET name = $1, email = $2, phone = $3, role = $4, is_active = $5, updated_at = $6, password = $7, referral_code = $8
+			  WHERE id = $9 AND deleted_at IS NULL`
 	_, err := r.db.ExecContext(ctx, query,
-		user.Name, user.Email, user.Phone, user.Role, user.IsActive, time.Now(), user.Password, user.ID,
+		user.Name, user.Email, user.Phone, user.Role, user.IsActive, time.Now(), user.Password, nilIfEmpty(user.ReferralCode), user.ID,
 	)
 	return err
+}
+
+func (r *UserRepo) FindByReferralCode(ctx context.Context, code string) (*entity.User, error) {
+	user := &entity.User{}
+	var referralCode sql.NullString
+	query := `SELECT id, name, email, password, phone, role, referral_code, is_active, created_at, updated_at 
+			  FROM users WHERE referral_code = $1 AND deleted_at IS NULL`
+	err := r.db.QueryRowContext(ctx, query, code).Scan(
+		&user.ID, &user.Name, &user.Email, &user.Password, &user.Phone,
+		&user.Role, &referralCode, &user.IsActive, &user.CreatedAt, &user.UpdatedAt,
+	)
+	if err == sql.ErrNoRows {
+		return nil, fmt.Errorf("affiliator not found")
+	}
+	if referralCode.Valid {
+		user.ReferralCode = referralCode.String
+	}
+	return user, err
+}
+
+func (r *UserRepo) CountByRole(ctx context.Context, role string) (int, error) {
+	var count int
+	query := `SELECT COUNT(*) FROM users WHERE role = $1 AND deleted_at IS NULL`
+	err := r.db.QueryRowContext(ctx, query, role).Scan(&count)
+	return count, err
 }
 
 func (r *UserRepo) Delete(ctx context.Context, id uuid.UUID) error {

@@ -13,7 +13,6 @@ type Handlers struct {
 
 	Outlet         *handler.OutletHandler
 	OutletCategory *handler.OutletCategoryHandler
-	Lead           *handler.LeadHandler
 	Partnership    *handler.PartnershipHandler
 	Payment        *handler.PaymentHandler
 	Agreement      *handler.AgreementHandler
@@ -29,6 +28,7 @@ type Handlers struct {
 	EbookCategory  *handler.EbookCategoryHandler
 	Chat           *handler.ChatHandler
 	AIAdmin        *handler.AIAdminHandler
+	Affiliator     *handler.AffiliatorHandler
 }
 
 func Setup(r *gin.Engine, h Handlers, jwtSecret, corsOrigins string) {

@@ -8,7 +8,7 @@
     <div v-if="loading" class="dl-loading">Memuat data...</div>
 
     <div v-else-if="!requests.length" class="dl-empty">
-      <div style="font-size:3rem;margin-bottom:16px;">✅</div>
+      <div style="font-size:3rem;margin-bottom:16px;"></div>
       <h3>Tidak ada request pending</h3>
       <p>Semua permintaan download sudah diproses</p>
     </div>
@@ -49,10 +49,10 @@
             <td>
               <div class="dl-actions">
                 <button @click="approve(req)" class="dl-btn dl-btn-approve" :disabled="processing === req.id">
-                  ✅ Approve
+                  Approve
                 </button>
                 <button @click="openReject(req)" class="dl-btn dl-btn-reject" :disabled="processing === req.id">
-                  ❌ Reject
+                  Reject
                 </button>
               </div>
             </td>

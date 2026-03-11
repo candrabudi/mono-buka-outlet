@@ -22,7 +22,7 @@
           </svg>
           <div class="ld-ring-center">
             <div class="ld-ring-val">{{ loc.total_score }}</div>
-            <div class="ld-ring-label">Score</div>
+            <div class="ld-ring-label">Skor</div>
           </div>
         </div>
       </div>
@@ -38,7 +38,7 @@
       <div class="ld-info-card"><div class="ld-info-icon lic-blue"><i class="ri-money-dollar-circle-line"></i></div><div><div class="ld-info-label">Sewa/Tahun</div><div class="ld-info-val">{{ fc(loc.harga_sewa_per_tahun) }}</div></div></div>
       <div class="ld-info-card"><div class="ld-info-icon lic-green"><i class="ri-user-line"></i></div><div><div class="ld-info-label">Mitra</div><div class="ld-info-val">{{ loc.mitra?.name || '-' }}</div></div></div>
       <div class="ld-info-card"><div class="ld-info-icon lic-violet"><i class="ri-road-map-line"></i></div><div><div class="ld-info-label">Lebar Jalan</div><div class="ld-info-val">{{ loc.lebar_jalan }} m</div></div></div>
-      <div class="ld-info-card"><div class="ld-info-icon lic-amber"><i class="ri-walk-line"></i></div><div><div class="ld-info-label">Traffic/Hari</div><div class="ld-info-val">{{ (loc.estimasi_lalu_lintas||0).toLocaleString() }}</div></div></div>
+      <div class="ld-info-card"><div class="ld-info-icon lic-amber"><i class="ri-walk-line"></i></div><div><div class="ld-info-label">Estimasi Lalu Lintas/Hari</div><div class="ld-info-val">{{ (loc.estimasi_lalu_lintas||0).toLocaleString() }}</div></div></div>
     </div>
 
     <!-- Tabs -->
@@ -57,9 +57,11 @@
         <div class="ld-detail-grid">
           <div class="ld-detail-item"><span class="ld-dl"><i class="ri-time-line"></i> Durasi Sewa</span><span class="ld-dv">{{ loc.durasi_sewa }} tahun</span></div>
           <div class="ld-detail-item"><span class="ld-dl"><i class="ri-stack-line"></i> Jumlah Lantai</span><span class="ld-dv">{{ loc.jumlah_lantai }}</span></div>
-          <div class="ld-detail-item"><span class="ld-dl"><i class="ri-store-2-line"></i> Kompetitor (500m)</span><span class="ld-dv">{{ loc.jumlah_kompetitor }}</span></div>
+          <div class="ld-detail-item"><span class="ld-dl"><i class="ri-store-2-line"></i> Kompetitor (radius 500m)</span><span class="ld-dv">{{ loc.jumlah_kompetitor }}</span></div>
           <div class="ld-detail-item"><span class="ld-dl"><i class="ri-map-pin-range-line"></i> Dekat Dengan</span><span class="ld-dv">{{ loc.dekat_dengan || '-' }}</span></div>
-          <div class="ld-detail-item"><span class="ld-dl"><i class="ri-group-line"></i> Target Market</span><span class="ld-dv">{{ loc.target_market || '-' }}</span></div>
+          <div class="ld-detail-item"><span class="ld-dl"><i class="ri-group-line"></i> Target Pasar</span><span class="ld-dv">{{ loc.target_market || '-' }}</span></div>
+          <div class="ld-detail-item"><span class="ld-dl"><i class="ri-map-2-line"></i> Kecamatan</span><span class="ld-dv">{{ loc.kecamatan || '-' }}</span></div>
+          <div class="ld-detail-item"><span class="ld-dl"><i class="ri-hashtag"></i> Kode Pos</span><span class="ld-dv">{{ loc.kode_pos || '-' }}</span></div>
           <div v-if="loc.partnership" class="ld-detail-item"><span class="ld-dl"><i class="ri-handshake-line"></i> Partnership</span><span class="ld-dv">{{ partnershipLabel(loc.partnership.status) }}</span></div>
         </div>
         <div class="ld-status-section">
@@ -97,7 +99,7 @@
       <!-- SCORING -->
       <template v-else-if="tab==='scoring'">
         <div class="ld-score-header">
-          <h3 class="ld-section-title"><i class="ri-bar-chart-2-fill"></i> Scoring Lokasi</h3>
+          <h3 class="ld-section-title"><i class="ri-bar-chart-2-fill"></i> Skor Lokasi</h3>
           <button @click="recalculate" class="lc-btn-primary" style="font-size:.78rem;padding:8px 18px"><i class="ri-refresh-line"></i> Hitung Ulang</button>
         </div>
         <div class="ld-score-grid">
@@ -111,7 +113,7 @@
           </div>
         </div>
         <div class="ld-score-total">
-          <div class="ld-st-label">Total Score</div>
+          <div class="ld-st-label">Total Skor</div>
           <div class="ld-st-val" :style="{color:scoreColor(loc.total_score)}">{{ loc.total_score }}</div>
           <div class="ld-st-cat" :style="{color:scoreColor(loc.total_score)}">{{ loc.score_category }}</div>
         </div>
@@ -172,13 +174,20 @@
         </div>
         <div v-if="loc.files?.length" class="ld-files-grid">
           <div v-for="f in loc.files" :key="f.id" class="ld-file-card">
-            <img v-if="isImage(f.file_url)" :src="f.file_url" class="ld-file-thumb" @click="window.open(f.file_url,'_blank')" />
-            <div v-else class="ld-file-icon"><i class="ri-file-3-line"></i></div>
+            <div class="ld-file-preview" @click="previewFile(f)">
+              <img v-if="isImage(f.file_url)" :src="f.file_url" class="ld-file-thumb" />
+              <div v-else-if="isPdf(f.file_url)" class="ld-file-icon ld-pdf-icon"><i class="ri-file-pdf-2-line"></i><span>PDF</span></div>
+              <div v-else class="ld-file-icon"><i class="ri-file-3-line"></i></div>
+              <div class="ld-file-hover"><i class="ri-eye-line"></i> Lihat</div>
+            </div>
             <div class="ld-file-info">
-              <span class="ld-file-type">{{ f.file_type }}</span>
+              <span class="ld-file-type-badge" :class="isImage(f.file_url) ? 'ftb-img' : 'ftb-doc'">{{ isImage(f.file_url) ? 'Foto' : 'Dokumen' }}</span>
               <span class="ld-file-label">{{ f.label || 'File' }}</span>
             </div>
-            <button @click="deleteFile(f.id)" class="ld-file-del"><i class="ri-delete-bin-6-line"></i></button>
+            <div class="ld-file-actions">
+              <button @click="downloadFile(f.file_url, f.label)" class="ld-file-action-btn" title="Download"><i class="ri-download-2-line"></i></button>
+              <button @click="deleteFile(f.id)" class="ld-file-action-btn ld-file-del-btn" title="Hapus"><i class="ri-delete-bin-6-line"></i></button>
+            </div>
           </div>
         </div>
         <div v-else class="ld-empty-text"><i class="ri-folder-image-line" style="font-size:1.5rem;display:block;margin-bottom:8px"></i>Belum ada dokumen</div>
@@ -196,13 +205,13 @@
           <form @submit.prevent="createSurvey" class="lc-modal-body">
             <div class="lc-frow">
               <div class="lc-fg"><label><i class="ri-calendar-line"></i> Tanggal Survei <span class="req">*</span></label><input v-model="surveyForm.survey_date" type="datetime-local" class="lc-input" required /></div>
-              <div class="lc-fg"><label><i class="ri-user-3-line"></i> Surveyor ID</label><input v-model="surveyForm.survey_by" class="lc-input" placeholder="UUID user" /></div>
+              <div class="lc-fg"><label><i class="ri-user-3-line"></i> Nama Surveyor</label><input v-model="surveyForm.nama_surveyor" class="lc-input" placeholder="Nama petugas survei" /></div>
             </div>
-            <div class="lc-fg"><label><i class="ri-file-text-line"></i> Hasil Survei <span class="req">*</span></label><textarea v-model="surveyForm.hasil_survey" class="lc-input lc-textarea" required placeholder="Tulis hasil survei lokasi..."></textarea></div>
-            <div class="lc-fg"><label><i class="ri-sticky-note-line"></i> Catatan Tambahan</label><textarea v-model="surveyForm.catatan_survey" class="lc-input lc-textarea" placeholder="Catatan lain..."></textarea></div>
+            <div class="lc-fg"><label><i class="ri-file-text-line"></i> Hasil Survei <span class="req">*</span></label><textarea v-model="surveyForm.hasil_survey" class="lc-input lc-textarea" required placeholder="Deskripsikan kondisi lokasi, lingkungan sekitar, aksesibilitas, dll..."></textarea></div>
+            <div class="lc-fg"><label><i class="ri-sticky-note-line"></i> Catatan Tambahan</label><textarea v-model="surveyForm.catatan_survey" class="lc-input lc-textarea" placeholder="Catatan atau rekomendasi lainnya..."></textarea></div>
             <div class="lc-frow">
-              <div class="lc-fg"><label><i class="ri-money-dollar-circle-line"></i> Est. Omzet/Bulan</label><input v-model.number="surveyForm.estimasi_omzet" type="number" class="lc-input" /></div>
-              <div class="lc-fg"><label><i class="ri-timer-line"></i> Est. BEP (bulan)</label><input v-model.number="surveyForm.estimasi_bep" type="number" class="lc-input" /></div>
+              <div class="lc-fg"><label><i class="ri-money-dollar-circle-line"></i> Estimasi Omzet/Bulan</label><input v-model.number="surveyForm.estimasi_omzet" type="number" class="lc-input" placeholder="0" /></div>
+              <div class="lc-fg"><label><i class="ri-timer-line"></i> Estimasi BEP (bulan)</label><input v-model.number="surveyForm.estimasi_bep" type="number" class="lc-input" placeholder="0" /></div>
             </div>
             <div class="lc-modal-foot"><button type="button" @click="showSurveyModal=false" class="lc-btn-sec">Batal</button><button type="submit" class="lc-btn-primary"><i class="ri-check-line"></i> Simpan Survei</button></div>
           </form>
@@ -222,14 +231,34 @@
             <div class="lc-fg"><label><i class="ri-checkbox-circle-line"></i> Keputusan <span class="req">*</span></label>
               <select v-model="approvalForm.decision" class="lc-input" required>
                 <option value="">Pilih keputusan</option>
-                <option value="approved">✅ Setujui</option>
-                <option value="rejected">❌ Tolak</option>
-                <option value="revision">🔄 Minta Revisi</option>
+                <option value="approved">Setujui</option>
+                <option value="rejected">Tolak</option>
+                <option value="revision">Minta Revisi</option>
               </select>
             </div>
             <div class="lc-fg"><label><i class="ri-chat-3-line"></i> Catatan {{ approvalForm.decision==='rejected'?'(wajib)':'' }}</label><textarea v-model="approvalForm.note" class="lc-input lc-textarea" :required="approvalForm.decision==='rejected'" placeholder="Alasan keputusan..."></textarea></div>
             <div class="lc-modal-foot"><button type="button" @click="showApprovalModal=false" class="lc-btn-sec">Batal</button><button type="submit" class="lc-btn-primary"><i class="ri-check-line"></i> Submit</button></div>
           </form>
+        </div>
+      </div>
+    </Teleport>
+
+    <!-- File Preview Modal -->
+    <Teleport to="body">
+      <div v-if="previewModal.show" class="ld-preview-overlay" @click.self="previewModal.show=false">
+        <div class="ld-preview-container" @click.stop>
+          <div class="ld-preview-header">
+            <span class="ld-preview-title"><i :class="previewModal.isImage ? 'ri-image-line' : 'ri-file-pdf-2-line'"></i> {{ previewModal.label }}</span>
+            <div class="ld-preview-header-actions">
+              <button @click="downloadFile(previewModal.url, previewModal.label)" class="ld-preview-action-btn" title="Download"><i class="ri-download-2-line"></i></button>
+              <button @click="openUrl(previewModal.url)" class="ld-preview-action-btn" title="Buka di tab baru"><i class="ri-external-link-line"></i></button>
+              <button @click="previewModal.show=false" class="ld-preview-close"><i class="ri-close-line"></i></button>
+            </div>
+          </div>
+          <div class="ld-preview-body">
+            <img v-if="previewModal.isImage" :src="previewModal.url" class="ld-preview-img" />
+            <iframe v-else :src="previewModal.url" class="ld-preview-pdf"></iframe>
+          </div>
         </div>
       </div>
     </Teleport>
@@ -251,14 +280,14 @@ const tab = ref('overview')
 const newStatus = ref('')
 const showSurveyModal = ref(false)
 const showApprovalModal = ref(false)
-const surveyForm = reactive({ survey_date:'', survey_by:'', hasil_survey:'', catatan_survey:'', estimasi_omzet:0, estimasi_bep:0 })
+const surveyForm = reactive({ survey_date:'', nama_surveyor:'', hasil_survey:'', catatan_survey:'', estimasi_omzet:0, estimasi_bep:0 })
 const approvalForm = reactive({ decision:'', note:'' })
 
 const tabs = [
-  { key:'overview', label:'Overview', icon:'ri-eye-line' },
-  { key:'scoring', label:'Scoring', icon:'ri-bar-chart-2-line' },
+  { key:'overview', label:'Ringkasan', icon:'ri-eye-line' },
+  { key:'scoring', label:'Skor', icon:'ri-bar-chart-2-line' },
   { key:'survey', label:'Survei', icon:'ri-survey-line' },
-  { key:'approval', label:'Approval', icon:'ri-shield-check-line' },
+  { key:'approval', label:'Persetujuan', icon:'ri-shield-check-line' },
   { key:'documents', label:'Dokumen', icon:'ri-folder-image-line' },
 ]
 
@@ -286,19 +315,40 @@ function dotStyle(st, idx) {
 }
 
 const scoreItems = computed(() => [
-  { key:'traffic', label:'Traffic', weight:30, value: loc.value?.score_traffic||0, icon:'ri-walk-line' },
+  { key:'traffic', label:'Lalu Lintas', weight:30, value: loc.value?.score_traffic||0, icon:'ri-walk-line' },
   { key:'sewa', label:'Harga Sewa', weight:20, value: loc.value?.score_sewa||0, icon:'ri-money-dollar-circle-line' },
   { key:'kompetitor', label:'Kompetitor', weight:20, value: loc.value?.score_kompetitor||0, icon:'ri-store-2-line' },
   { key:'akses', label:'Akses Jalan', weight:15, value: loc.value?.score_akses||0, icon:'ri-road-map-line' },
-  { key:'market', label:'Target Market', weight:15, value: loc.value?.score_market||0, icon:'ri-group-line' },
+  { key:'market', label:'Target Pasar', weight:15, value: loc.value?.score_market||0, icon:'ri-group-line' },
 ])
 
-function statusLabel(s) { return { DRAFT:'Draft', SUBMITTED:'Diajukan', IN_REVIEW:'Ditinjau', SURVEY_SCHEDULED:'Survei', SURVEYED:'Disurvei', APPROVED:'Disetujui', REJECTED:'Ditolak', REVISION_NEEDED:'Revisi' }[s] || s }
-function partnershipLabel(s) { return { PENDING:'Menunggu', DP_VERIFIED:'DP Terverifikasi', AGREEMENT_SIGNED:'Agreement Signed', DEVELOPMENT:'Pembangunan', RUNNING:'Berjalan', COMPLETED:'Selesai' }[s] || s }
+function statusLabel(s) { return { DRAFT:'Draft', SUBMITTED:'Diajukan', IN_REVIEW:'Ditinjau', SURVEY_SCHEDULED:'Survei Dijadwalkan', SURVEYED:'Sudah Disurvei', APPROVED:'Disetujui', REJECTED:'Ditolak', REVISION_NEEDED:'Perlu Revisi' }[s] || s }
+function partnershipLabel(s) { return { PENDING:'Menunggu', DP_VERIFIED:'DP Terverifikasi', AGREEMENT_SIGNED:'Perjanjian Ditandatangani', DEVELOPMENT:'Pembangunan', RUNNING:'Berjalan', COMPLETED:'Selesai' }[s] || s }
 function scoreColor(s) { if (s >= 80) return '#22c55e'; if (s >= 65) return '#6366f1'; if (s >= 50) return '#f59e0b'; return '#ef4444' }
-function fc(n) { return 'Rp' + (n||0).toLocaleString('id-ID') }
+function fc(n) { return 'Rp ' + (n||0).toLocaleString('id-ID') }
 function formatDate(d) { return d ? new Date(d).toLocaleDateString('id-ID', { day:'2-digit', month:'short', year:'numeric' }) : '-' }
 function isImage(url) { return /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(url||'') }
+function isPdf(url) { return /\.pdf$/i.test(url||'') }
+function openUrl(url) { window.open(url, '_blank') }
+
+const previewModal = reactive({ show: false, url: '', label: '', isImage: false })
+
+function previewFile(f) {
+  previewModal.url = f.file_url
+  previewModal.label = f.label || 'File'
+  previewModal.isImage = isImage(f.file_url)
+  previewModal.show = true
+}
+
+function downloadFile(url, filename) {
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename || 'download'
+  a.target = '_blank'
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+}
 
 async function loadData() {
   try { const { data } = await locationApi.getByID(id); loc.value = data.data; newStatus.value = loc.value.status } catch(e) { toast.error('Gagal memuat data') }
@@ -309,23 +359,43 @@ async function updateStatus() {
   finally { updatingStatus.value = false }
 }
 async function recalculate() {
-  try { await locationApi.recalculate(id); toast.success('Score dihitung ulang'); await loadData() } catch(e) { toast.error('Gagal') }
+  try { await locationApi.recalculate(id); toast.success('Skor berhasil dihitung ulang'); await loadData() } catch(e) { toast.error('Gagal menghitung ulang skor') }
 }
 async function createSurvey() {
   try {
-    const payload = { ...surveyForm }; if (payload.survey_date) payload.survey_date = new Date(payload.survey_date).toISOString(); if (!payload.survey_by) delete payload.survey_by
-    await locationApi.createSurvey(id, payload); toast.success('Survei disimpan'); showSurveyModal.value = false; Object.assign(surveyForm, { survey_date:'', survey_by:'', hasil_survey:'', catatan_survey:'', estimasi_omzet:0, estimasi_bep:0 }); await loadData()
-  } catch(e) { toast.error(e.response?.data?.error || 'Gagal') }
+    const payload = {
+      hasil_survey: surveyForm.hasil_survey,
+      catatan_survey: surveyForm.catatan_survey || (surveyForm.nama_surveyor ? 'Surveyor: ' + surveyForm.nama_surveyor : ''),
+      estimasi_omzet: surveyForm.estimasi_omzet || 0,
+      estimasi_bep: surveyForm.estimasi_bep || 0,
+    }
+    if (surveyForm.survey_date) payload.survey_date = new Date(surveyForm.survey_date).toISOString()
+    if (surveyForm.nama_surveyor && surveyForm.catatan_survey) {
+      payload.catatan_survey = 'Surveyor: ' + surveyForm.nama_surveyor + '\n' + surveyForm.catatan_survey
+    }
+    await locationApi.createSurvey(id, payload)
+    toast.success('Data survei berhasil disimpan')
+    showSurveyModal.value = false
+    Object.assign(surveyForm, { survey_date:'', nama_surveyor:'', hasil_survey:'', catatan_survey:'', estimasi_omzet:0, estimasi_bep:0 })
+    await loadData()
+  } catch(e) { toast.error(e.response?.data?.error || 'Gagal menyimpan survei') }
 }
 async function submitApproval() {
   try { await locationApi.approve(id, approvalForm); toast.success('Keputusan disimpan'); showApprovalModal.value = false; Object.assign(approvalForm, { decision:'', note:'' }); await loadData() } catch(e) { toast.error(e.response?.data?.error || 'Gagal') }
 }
 async function onFileUpload(e) {
   const file = e.target.files[0]; if (!file) return
-  try { const { data: upRes } = await uploadApi.upload(file); const url = upRes.data?.url || upRes.url || ''; await locationApi.addFile(id, { file_url: url, file_type: file.type.startsWith('image/')?'photo':'document', label: file.name }); toast.success('File diupload'); await loadData() } catch(e) { toast.error('Gagal upload') }
+  try {
+    const { data: upRes } = await uploadApi.upload(file)
+    const url = upRes.data?.url || upRes.url || ''
+    await locationApi.addFile(id, { file_url: url, file_type: file.type.startsWith('image/') ? 'photo' : 'document', label: file.name })
+    toast.success('File berhasil diupload')
+    await loadData()
+  } catch(err) { toast.error('Gagal mengupload file') }
+  e.target.value = ''
 }
 async function deleteFile(fileId) {
-  try { await locationApi.deleteFile(id, fileId); toast.success('File dihapus'); await loadData() } catch(e) { toast.error('Gagal hapus') }
+  try { await locationApi.deleteFile(id, fileId); toast.success('File berhasil dihapus'); await loadData() } catch(err) { toast.error('Gagal menghapus file') }
 }
 
 onMounted(loadData)
@@ -468,15 +538,41 @@ onMounted(loadData)
 .ld-appr-note { font-size:.82rem; color:#334155; background:rgba(0,0,0,.03); padding:10px 14px; border-radius:8px; margin-top:8px; }
 
 /* Files */
-.ld-files-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:12px; }
-.ld-file-card { position:relative; background:#f8fafc; border:1px solid #eef1f6; border-radius:12px; overflow:hidden; }
-.ld-file-thumb { width:100%; height:120px; object-fit:cover; cursor:pointer; }
-.ld-file-icon { height:120px; display:flex; align-items:center; justify-content:center; font-size:2.5rem; color:#94a3b8; }
-.ld-file-info { padding:10px 12px; }
-.ld-file-type { font-size:.6rem; font-weight:700; text-transform:uppercase; color:#94a3b8; }
-.ld-file-label { display:block; font-size:.72rem; font-weight:600; color:#334155; margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.ld-file-del { position:absolute; top:6px; right:6px; width:26px; height:26px; border-radius:50%; border:none; background:rgba(239,68,68,.9); color:#fff; cursor:pointer; font-size:.8rem; display:flex; align-items:center; justify-content:center; opacity:0; transition:all .2s; }
-.ld-file-card:hover .ld-file-del { opacity:1; }
+.ld-files-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:14px; }
+.ld-file-card { position:relative; background:#fff; border:1px solid #eef1f6; border-radius:14px; overflow:hidden; transition:all .2s; }
+.ld-file-card:hover { border-color:#c7d2fe; box-shadow:0 4px 16px rgba(99,102,241,.08); }
+.ld-file-preview { position:relative; cursor:pointer; overflow:hidden; }
+.ld-file-thumb { width:100%; height:140px; object-fit:cover; display:block; transition:transform .3s; }
+.ld-file-card:hover .ld-file-thumb { transform:scale(1.03); }
+.ld-file-icon { height:140px; display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:2.5rem; color:#94a3b8; background:#f8fafc; gap:4px; }
+.ld-pdf-icon { color:#ef4444; }
+.ld-pdf-icon span { font-size:.65rem; font-weight:800; letter-spacing:.05em; }
+.ld-file-hover { position:absolute; inset:0; background:rgba(0,0,0,.45); display:flex; align-items:center; justify-content:center; color:#fff; font-size:.85rem; font-weight:600; gap:5px; opacity:0; transition:opacity .2s; backdrop-filter:blur(2px); }
+.ld-file-preview:hover .ld-file-hover { opacity:1; }
+.ld-file-info { padding:10px 12px 6px; }
+.ld-file-type-badge { display:inline-block; font-size:.58rem; font-weight:700; text-transform:uppercase; letter-spacing:.04em; padding:2px 7px; border-radius:4px; }
+.ftb-img { background:#dbeafe; color:#2563eb; }
+.ftb-doc { background:#fef3c7; color:#d97706; }
+.ld-file-label { display:block; font-size:.74rem; font-weight:600; color:#334155; margin-top:4px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.ld-file-actions { display:flex; gap:4px; padding:4px 10px 10px; }
+.ld-file-action-btn { width:30px; height:30px; border-radius:8px; border:1px solid #e2e8f0; background:#fff; color:#64748b; cursor:pointer; font-size:.85rem; display:flex; align-items:center; justify-content:center; transition:all .2s; }
+.ld-file-action-btn:hover { background:#f1f5f9; color:#6366f1; border-color:#c7d2fe; }
+.ld-file-del-btn:hover { background:#fef2f2; color:#ef4444; border-color:#fecaca; }
+
+/* Preview Modal */
+.ld-preview-overlay { position:fixed; inset:0; background:rgba(0,0,0,.8); display:flex; align-items:center; justify-content:center; z-index:2000; backdrop-filter:blur(6px); padding:20px; }
+.ld-preview-container { background:#fff; border-radius:16px; width:100%; max-width:900px; max-height:90vh; display:flex; flex-direction:column; overflow:hidden; box-shadow:0 32px 100px rgba(0,0,0,.4); }
+.ld-preview-header { display:flex; align-items:center; justify-content:space-between; padding:14px 20px; border-bottom:1px solid #f1f5f9; flex-shrink:0; }
+.ld-preview-title { font-size:.88rem; font-weight:700; color:#0f172a; display:flex; align-items:center; gap:6px; }
+.ld-preview-title i { color:#6366f1; font-size:1.1rem; }
+.ld-preview-header-actions { display:flex; gap:6px; }
+.ld-preview-action-btn { width:34px; height:34px; border-radius:8px; border:1px solid #e2e8f0; background:#fff; color:#64748b; cursor:pointer; font-size:1rem; display:flex; align-items:center; justify-content:center; transition:all .2s; }
+.ld-preview-action-btn:hover { background:#eef2ff; color:#6366f1; border-color:#c7d2fe; }
+.ld-preview-close { width:34px; height:34px; border-radius:8px; border:none; background:#f1f5f9; color:#64748b; cursor:pointer; font-size:1.2rem; display:flex; align-items:center; justify-content:center; transition:all .15s; }
+.ld-preview-close:hover { background:#fee2e2; color:#ef4444; }
+.ld-preview-body { flex:1; overflow:auto; display:flex; align-items:center; justify-content:center; background:#f8fafc; min-height:400px; }
+.ld-preview-img { max-width:100%; max-height:75vh; object-fit:contain; }
+.ld-preview-pdf { width:100%; height:75vh; border:none; }
 
 /* Shared Badges */
 .lc-badge { font-size:.68rem; font-weight:700; text-transform:uppercase; letter-spacing:.04em; padding:4px 10px; border-radius:6px; }

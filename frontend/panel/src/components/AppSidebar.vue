@@ -216,12 +216,9 @@
             <li>
               <router-link to="/leader" class="sidebar-link" :class="{ active: $route.path.startsWith('/leader') }">
                 <span class="sidebar-link-icon">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="currentColor" class="path-1"/>
-                    <circle cx="12" cy="12" r="4" fill="var(--primary)" class="path-2"/>
-                  </svg>
+                  <Star :size="20" />
                 </span>
-                <span class="sidebar-link-text">Leader</span>
+                <span class="sidebar-link-text">Affiliator</span>
               </router-link>
             </li>
             <li v-if="auth.hasRole('master')">
@@ -259,6 +256,21 @@
             </li>
           </ul>
         </div>
+
+        <!-- Affiliator Self-Service -->
+        <div class="sidebar-section" v-if="auth.hasRole('affiliator')">
+          <h4 class="sidebar-section-label">Affiliator</h4>
+          <ul>
+            <li>
+              <router-link to="/affiliator-dashboard" class="sidebar-link" :class="{ active: $route.path.startsWith('/affiliator-dashboard') }">
+                <span class="sidebar-link-icon">
+                  <LayoutDashboard :size="20" />
+                </span>
+                <span class="sidebar-link-text">Dashboard</span>
+              </router-link>
+            </li>
+          </ul>
+        </div>
       </nav>
 
       <!-- User Footer -->
@@ -270,11 +282,7 @@
             <div class="sidebar-user-role">{{ auth.roleLabel(auth.userRole) }}</div>
           </div>
           <button @click="$emit('logout')" class="sidebar-logout-btn" title="Logout">
-            <svg width="21" height="18" viewBox="0 0 21 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path fill-rule="evenodd" clip-rule="evenodd" d="M17.1464 10.4394C16.8536 10.7323 16.8536 11.2072 17.1464 11.5001C17.4393 11.7929 17.9142 11.7929 18.2071 11.5001L19.5 10.2072C20.1834 9.52375 20.1834 8.41571 19.5 7.73229L18.2071 6.4394C17.9142 6.1465 17.4393 6.1465 17.1464 6.4394C16.8536 6.73229 16.8536 7.20716 17.1464 7.50006L17.8661 8.21973H11.75C11.3358 8.21973 11 8.55551 11 8.96973C11 9.38394 11.3358 9.71973 11.75 9.71973H17.8661L17.1464 10.4394Z" fill="var(--primary)" class="path-2"/>
-              <path fill-rule="evenodd" clip-rule="evenodd" d="M4.75 17.75H12C14.6234 17.75 16.75 15.6234 16.75 13C16.75 12.5858 16.4142 12.25 16 12.25C15.5858 12.25 15.25 12.5858 15.25 13C15.25 14.7949 13.7949 16.25 12 16.25H8.21412C7.34758 17.1733 6.11614 17.75 4.75 17.75ZM8.21412 1.75H12C13.7949 1.75 15.25 3.20507 15.25 5C15.25 5.41421 15.5858 5.75 16 5.75C16.4142 5.75 16.75 5.41421 16.75 5C16.75 2.37665 14.6234 0.25 12 0.25H4.75C6.11614 0.25 7.34758 0.82673 8.21412 1.75Z" fill="currentColor" class="path-1"/>
-              <path fill-rule="evenodd" clip-rule="evenodd" d="M0 5C0 2.37665 2.12665 0.25 4.75 0.25C7.37335 0.25 9.5 2.37665 9.5 5V13C9.5 15.6234 7.37335 17.75 4.75 17.75C2.12665 17.75 0 15.6234 0 13V5Z" fill="currentColor" class="path-1"/>
-            </svg>
+            <LogOut :size="18" />
           </button>
         </div>
       </div>
@@ -286,6 +294,7 @@
 </template>
 
 <script setup>
+import { Star, LayoutDashboard, LogOut } from 'lucide-vue-next'
 import { useAuthStore } from '../stores/auth'
 
 const auth = useAuthStore()

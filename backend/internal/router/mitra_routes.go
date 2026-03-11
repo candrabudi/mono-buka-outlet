@@ -1,8 +1,6 @@
 package router
 
 import (
-	"time"
-
 	"github.com/franchise-system/backend/internal/middleware"
 	"github.com/gin-gonic/gin"
 )
@@ -11,13 +9,9 @@ import (
 func RegisterMitraRoutes(r *gin.Engine, h Handlers, jwtSecret string) {
 	mitra := r.Group("/api/v1/mitra")
 
-	// Rate limiter: 5 attempts per minute, 2 minute lockout
-	authLimiter := middleware.NewRateLimiter(5, 1*time.Minute, 2*time.Minute)
-
 	{
-		// Auth (public) — with rate limiting
+		// Auth (public)
 		mitraAuth := mitra.Group("/auth")
-		mitraAuth.Use(authLimiter.Middleware())
 		{
 			mitraAuth.POST("/login", h.AdminAuth.Login)          // Step 1: email+pass → OTP
 			mitraAuth.POST("/verify-otp", h.AdminAuth.VerifyOTP) // Step 2: OTP → JWT

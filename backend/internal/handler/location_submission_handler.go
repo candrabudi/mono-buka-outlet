@@ -25,6 +25,20 @@ func (h *LocationSubmissionHandler) Create(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+
+	if req.PartnershipID != nil {
+		existing, _ := h.repo.FindByPartnership(c.Request.Context(), *req.PartnershipID)
+		for _, loc := range existing {
+			if loc.Status != entity.LocSubStatusRejected {
+				c.JSON(http.StatusConflict, gin.H{
+					"error":  "Partnership ini sudah memiliki pengajuan lokasi yang masih aktif",
+					"status": loc.Status,
+				})
+				return
+			}
+		}
+	}
+
 	req.Status = entity.LocSubStatusDraft
 	h.calculateScore(&req)
 	if err := h.repo.Create(c.Request.Context(), &req); err != nil {
@@ -227,8 +241,8 @@ func (h *LocationSubmissionHandler) Approve(c *gin.Context) {
 		return
 	}
 
-	userID, _ := c.Get("userID")
-	approverID, _ := uuid.Parse(userID.(string))
+	userID := c.MustGet("user_id").(uuid.UUID)
+	approverID := userID
 
 	approval := &entity.LocationApproval{
 		LocationID: locID,

@@ -16,7 +16,7 @@ export const useAuthStore = defineStore('auth', () => {
   const userName = computed(() => user.value?.name || '')
   const userInitial = computed(() => userName.value?.charAt(0)?.toUpperCase() || '?')
 
-  const ADMIN_ROLES = ['master', 'admin', 'finance']
+  const ADMIN_ROLES = ['master', 'admin', 'finance', 'affiliator']
   const isAdmin = computed(() => ADMIN_ROLES.includes(userRole.value))
 
   function hasRole(...roles) {
@@ -28,6 +28,7 @@ export const useAuthStore = defineStore('auth', () => {
       master: 'Master',
       admin: 'Admin',
       finance: 'Finance',
+      affiliator: 'Affiliator',
       mitra: 'Mitra',
     }
     return labels[role] || role

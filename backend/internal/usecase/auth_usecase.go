@@ -150,6 +150,9 @@ func (uc *AuthUseCase) Register(ctx context.Context, req RegisterRequest) (*Auth
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
 	}
+	if role == entity.RoleAffiliator {
+		user.ReferralCode = generateReferralCode()
+	}
 	if err := uc.userRepo.Create(ctx, user); err != nil {
 		return nil, fmt.Errorf("failed to create user: %w", err)
 	}
@@ -158,6 +161,12 @@ func (uc *AuthUseCase) Register(ctx context.Context, req RegisterRequest) (*Auth
 		return nil, fmt.Errorf("failed to generate token")
 	}
 	return &AuthResponse{Token: token, User: user}, nil
+}
+
+func generateReferralCode() string {
+	id := uuid.New()
+	code := strings.ToUpper(strings.ReplaceAll(id.String()[:8], "-", ""))
+	return "AFF-" + code
 }
 
 func (uc *AuthUseCase) GetProfile(ctx context.Context, userID uuid.UUID) (*entity.User, error) {
@@ -181,9 +190,10 @@ func (uc *AuthUseCase) generateToken(user *entity.User) (string, error) {
 }
 
 type UpdateUserRequest struct {
-	Name  string `json:"name"`
-	Email string `json:"email"`
-	Phone string `json:"phone"`
+	Name     string `json:"name"`
+	Email    string `json:"email"`
+	Phone    string `json:"phone"`
+	Password string `json:"password"`
 }
 
 func (uc *AuthUseCase) UpdateUser(ctx context.Context, id uuid.UUID, req UpdateUserRequest) (*entity.User, error) {
@@ -212,6 +222,17 @@ func (uc *AuthUseCase) UpdateUser(ctx context.Context, id uuid.UUID, req UpdateU
 			return nil, fmt.Errorf("format nomor handphone tidak valid")
 		}
 		user.Phone = req.Phone
+	}
+	// Hash and update password if provided
+	if req.Password != "" {
+		if len(req.Password) < 8 {
+			return nil, fmt.Errorf("password minimal 8 karakter")
+		}
+		hashed, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+		if err != nil {
+			return nil, fmt.Errorf("gagal hash password")
+		}
+		user.Password = string(hashed)
 	}
 	user.UpdatedAt = time.Now()
 	if err := uc.userRepo.Update(ctx, user); err != nil {

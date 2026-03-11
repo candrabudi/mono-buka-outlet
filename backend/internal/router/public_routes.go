@@ -15,7 +15,6 @@ func RegisterPublicRoutes(r *gin.Engine, h Handlers, jwtSecret string) {
 		pub.GET("/outlets", h.Outlet.PublicList)
 		pub.GET("/outlets/:id", h.Outlet.PublicDetail)
 		pub.GET("/outlet-categories", h.OutletCategory.PublicList)
-		pub.POST("/consultation", h.Lead.PublicConsultation)
 
 		// Midtrans webhook (no auth)
 		pub.POST("/midtrans/webhook", h.Invoice.MidtransWebhook)

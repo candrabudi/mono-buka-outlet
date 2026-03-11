@@ -39,6 +39,7 @@ func AdminRoles() []string {
 		RoleMaster,
 		RoleAdmin,
 		RoleFinance,
+		RoleAffiliator,
 	}
 }
 
