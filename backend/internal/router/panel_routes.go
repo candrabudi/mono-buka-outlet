@@ -244,6 +244,17 @@ func RegisterPanelRoutes(r *gin.Engine, h Handlers, jwtSecret string) {
 				ai.POST("/cache/invalidate", h.AIAdmin.InvalidateCache)
 			}
 
+			// Affiliator Management — master, admin (commission & withdrawal admin)
+			affMgmt := adminProtected.Group("/affiliator-management")
+			affMgmt.Use(middleware.RoleAuth(entity.RoleMaster, entity.RoleAdmin))
+			{
+				affMgmt.POST("/commissions", h.Affiliator.GiveCommission)
+				affMgmt.GET("/commissions/:id", h.Affiliator.GetAffiliatorCommissions)
+				affMgmt.GET("/withdrawals", h.Affiliator.GetAllWithdrawals)
+				affMgmt.GET("/withdrawals/:id", h.Affiliator.GetWithdrawalByID)
+				affMgmt.PATCH("/withdrawals/:id", h.Affiliator.ProcessWithdrawal)
+			}
+
 			// Affiliator — affiliator only (self-service)
 			affiliator := adminProtected.Group("/affiliator")
 			affiliator.Use(middleware.RoleAuth(entity.RoleAffiliator))
@@ -251,6 +262,10 @@ func RegisterPanelRoutes(r *gin.Engine, h Handlers, jwtSecret string) {
 				affiliator.GET("/dashboard", h.Affiliator.GetDashboard)
 				affiliator.GET("/partnerships", h.Affiliator.GetMyPartnerships)
 				affiliator.GET("/referral-code", h.Affiliator.GetReferralCode)
+				affiliator.GET("/commissions", h.Affiliator.GetMyCommissions)
+				affiliator.GET("/balance", h.Affiliator.GetMyBalance)
+				affiliator.POST("/withdrawals", h.Affiliator.RequestWithdrawal)
+				affiliator.GET("/withdrawals", h.Affiliator.GetMyWithdrawals)
 			}
 		}
 	}

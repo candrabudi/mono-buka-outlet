@@ -314,10 +314,7 @@
           <form @submit.prevent="createAgreement" class="pd-modal-body">
             <div class="pd-fg">
               <label>Tipe Dokumen <span class="req">*</span></label>
-              <select v-model="agrForm.type" class="pd-input" required>
-                <option value="CONTRACT">Kontrak (perlu ditandatangani)</option>
-                <option value="DOCUMENT">Dokumen Lainnya</option>
-              </select>
+              <SearchSelect v-model="agrForm.type" :options="agrTypeOptions" placeholder="Pilih tipe" :allow-empty="false" />
             </div>
             <div class="pd-fg">
               <label>Judul <span class="req">*</span></label>
@@ -424,12 +421,7 @@
 
             <div class="pd-fg">
               <label>Tipe Pembayaran <span class="req">*</span></label>
-              <select v-model="invForm.type" class="pd-input" required @change="onInvTypeChange">
-                <option value="DP">Down Payment (DP)</option>
-                <option value="CICILAN">Cicilan</option>
-                <option value="PELUNASAN">Pelunasan</option>
-                <option value="INVOICE">Invoice Lainnya</option>
-              </select>
+              <SearchSelect v-model="invForm.type" :options="invTypeSelectOptions" placeholder="Pilih tipe" :allow-empty="false" @update:model-value="onInvTypeChange" />
             </div>
             <div class="pd-fg"><label>Jumlah Tagihan (Rp) <span class="req">*</span></label><input v-model.number="invForm.amount" type="number" class="pd-input" placeholder="Nominal invoice" required></div>
             <div class="pd-fg"><label>Deskripsi <span class="req">*</span></label><input v-model="invForm.description" class="pd-input" :placeholder="'Contoh: DP ' + (p?.package?.name || 'Paket Franchise')" required></div>
@@ -561,10 +553,7 @@
               </div>
               <div class="pd-form-row" style="grid-template-columns:1fr 1fr 1fr">
                 <div class="pd-fg"><label>Tipe Bangunan</label>
-                  <select v-model="locForm.tipe_bangunan" class="pd-input">
-                    <option value="">Pilih tipe</option>
-                    <option value="ruko">Ruko</option><option value="stand">Stand</option><option value="mall">Mall</option><option value="kios">Kios</option><option value="lainnya">Lainnya</option>
-                  </select>
+                  <SearchSelect v-model="locForm.tipe_bangunan" :options="bangunanOptions" placeholder="Pilih tipe" />
                 </div>
                 <div class="pd-fg"><label>Lebar Jalan (m)</label><input v-model.number="locForm.lebar_jalan" type="number" step="any" class="pd-input" placeholder="8" /></div>
                 <div class="pd-fg"><label>Jumlah Lantai</label><input v-model.number="locForm.jumlah_lantai" type="number" class="pd-input" placeholder="2" /></div>
@@ -600,6 +589,7 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { partnershipApi, agreementApi, revenueApi, invoiceApi, uploadApi, locationApi } from '../../services/api'
 import { useToastStore } from '../../stores/toast'
+import SearchSelect from '../../components/SearchSelect.vue'
 
 const toast = useToastStore()
 const route = useRoute()
@@ -608,6 +598,24 @@ const p = ref(null)
 const tab = ref('invoices')
 const agreements = ref([]), revenues = ref([]), invoices = ref([]), locations = ref([])
 const showAgrModal = ref(false), showRevModal = ref(false), showInvModal = ref(false), showLocModal = ref(false)
+
+const agrTypeOptions = [
+  { value: 'CONTRACT', label: 'Kontrak (perlu ditandatangani)' },
+  { value: 'DOCUMENT', label: 'Dokumen Lainnya' },
+]
+const invTypeSelectOptions = [
+  { value: 'DP', label: 'Down Payment (DP)' },
+  { value: 'CICILAN', label: 'Cicilan' },
+  { value: 'PELUNASAN', label: 'Pelunasan' },
+  { value: 'INVOICE', label: 'Invoice Lainnya' },
+]
+const bangunanOptions = [
+  { value: 'ruko', label: 'Ruko' },
+  { value: 'stand', label: 'Stand' },
+  { value: 'mall', label: 'Mall' },
+  { value: 'kios', label: 'Kios' },
+  { value: 'lainnya', label: 'Lainnya' },
+]
 const agrForm = reactive({ title:'', type:'CONTRACT', file_url:'' })
 const agrFile = ref(null)
 const agrFilePreview = ref('')

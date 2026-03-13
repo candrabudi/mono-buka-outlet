@@ -58,7 +58,7 @@ func (h *PartnershipHandler) GetAll(c *gin.Context) {
 func (h *PartnershipHandler) GetByID(c *gin.Context) {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "ID tidak valid"})
 		return
 	}
 	p, err := h.partnershipUC.GetByID(c.Request.Context(), id)

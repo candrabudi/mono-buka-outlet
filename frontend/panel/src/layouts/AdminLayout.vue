@@ -116,6 +116,7 @@ const pageTitles = {
   EbookOrders: 'Pesanan Ebook',
   DownloadRequests: 'Request Download',
   AffiliatorDashboard: 'Affiliator Dashboard',
+  AffiliatorManagement: 'Komisi & Penarikan Affiliator',
 }
 const pageSubtitles = {
   Dashboard: "Let's check your update today",
@@ -140,6 +141,7 @@ const pageSubtitles = {
   EbookOrders: 'Pantau semua transaksi ebook',
   DownloadRequests: 'Approve atau reject permintaan download',
   AffiliatorDashboard: 'Pantau referral & partnership Anda',
+  AffiliatorManagement: 'Kelola komisi, bonus, dan penarikan affiliator',
 }
 
 const pageTitle = computed(() => pageTitles[route.name] || '')

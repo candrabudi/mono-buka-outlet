@@ -33,10 +33,13 @@
         <svg class="py-search-ico" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
         <input v-model="search" class="py-search" placeholder="Cari nama mitra atau tipe..." />
       </div>
-      <select v-model="filterMitra" class="py-filter-select">
-        <option value="">Semua Mitra</option>
-        <option v-for="m in mitraOptions" :key="m.id" :value="m.id">{{ m.name }}</option>
-      </select>
+      <SearchSelect
+        v-model="filterMitra"
+        :options="mitraSelectOptions"
+        placeholder="Semua Mitra"
+        empty-label="Semua Mitra"
+        search-placeholder="Cari mitra..."
+      />
     </div>
 
     <!-- Table -->
@@ -131,6 +134,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { partnershipApi, paymentApi } from '../../services/api'
 import { useToastStore } from '../../stores/toast'
+import SearchSelect from '../../components/SearchSelect.vue'
 
 const toast = useToastStore()
 const partnerships = ref([])
@@ -178,6 +182,7 @@ const mitraOptions = computed(() => {
   })
   return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name))
 })
+const mitraSelectOptions = computed(() => mitraOptions.value.map(m => ({ value: m.id, label: m.name })))
 
 const filtered = computed(() => {
   let list = allPayments.value

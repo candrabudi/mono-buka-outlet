@@ -6,21 +6,20 @@
     </div>
 
     <div class="eo-filters">
-      <select v-model="filters.status" @change="load" class="eo-select">
-        <option value="">Semua Status</option>
-        <option value="PENDING">Pending</option>
-        <option value="PAID">Paid</option>
-        <option value="EXPIRED">Expired</option>
-        <option value="FAILED">Failed</option>
-        <option value="CANCELED">Canceled</option>
-      </select>
-      <select v-model="filters.download_status" @change="load" class="eo-select">
-        <option value="">Semua Download</option>
-        <option value="NONE">Belum Request</option>
-        <option value="REQUESTED">Menunggu Approval</option>
-        <option value="APPROVED">Approved</option>
-        <option value="REJECTED">Rejected</option>
-      </select>
+      <SearchSelect
+        v-model="filters.status"
+        :options="statusOptions"
+        placeholder="Semua Status"
+        empty-label="Semua Status"
+        @update:model-value="load"
+      />
+      <SearchSelect
+        v-model="filters.download_status"
+        :options="downloadOptions"
+        placeholder="Semua Download"
+        empty-label="Semua Download"
+        @update:model-value="load"
+      />
     </div>
 
     <div v-if="loading" class="eo-loading">Memuat data...</div>
@@ -125,6 +124,7 @@
 import { ref, onMounted } from 'vue'
 import { ebookOrderApi } from '../../services/api'
 import { useToastStore } from '../../stores/toast'
+import SearchSelect from '../../components/SearchSelect.vue'
 
 const toast = useToastStore()
 const orders = ref([])
@@ -134,6 +134,20 @@ const filters = ref({ status: '', download_status: '' })
 const proofTarget = ref(null)
 const rejectTarget = ref(null)
 const rejectNote = ref('')
+
+const statusOptions = [
+  { value: 'PENDING', label: 'Pending' },
+  { value: 'PAID', label: 'Paid' },
+  { value: 'EXPIRED', label: 'Expired' },
+  { value: 'FAILED', label: 'Failed' },
+  { value: 'CANCELED', label: 'Canceled' },
+]
+const downloadOptions = [
+  { value: 'NONE', label: 'Belum Request' },
+  { value: 'REQUESTED', label: 'Menunggu Approval' },
+  { value: 'APPROVED', label: 'Approved' },
+  { value: 'REJECTED', label: 'Rejected' },
+]
 
 onMounted(load)
 

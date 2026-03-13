@@ -25,10 +25,14 @@
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8"><circle cx="11" cy="11" r="8" stroke-width="2"/><path d="m21 21-4.35-4.35" stroke-width="2" stroke-linecap="round"/></svg>
         <input v-model="search" @input="debouncedLoad" type="text" placeholder="Cari judul, penulis, atau kategori..." />
       </div>
-      <select v-if="categories.length" v-model="selectedCategory" @change="load" class="ebook-filter-select">
-        <option value="">Semua Kategori</option>
-        <option v-for="cat in categories" :key="cat" :value="cat">{{ cat }}</option>
-      </select>
+      <SearchSelect v-if="categories.length"
+        v-model="selectedCategory"
+        :options="categoryFilterOptions"
+        placeholder="Semua Kategori"
+        empty-label="Semua Kategori"
+        search-placeholder="Cari kategori..."
+        @update:model-value="load"
+      />
     </div>
 
     <!-- Loading -->
@@ -100,6 +104,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { ebookApi } from '../../services/api'
 import { useToastStore } from '../../stores/toast'
+import SearchSelect from '../../components/SearchSelect.vue'
 
 const toast = useToastStore()
 const ebooks = ref([])
@@ -108,6 +113,7 @@ const total = ref(0)
 const search = ref('')
 const selectedCategory = ref('')
 const categories = ref([])
+const categoryFilterOptions = computed(() => categories.value.map(c => ({ value: c, label: c })))
 const deleteTarget = ref(null)
 const deleting = ref(false)
 

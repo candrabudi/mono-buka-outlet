@@ -216,3 +216,20 @@ type EbookOrderRepository interface {
 	ApprovePayment(ctx context.Context, id uuid.UUID) error
 	RejectPayment(ctx context.Context, id uuid.UUID, note string) error
 }
+
+type AffiliatorCommissionRepository interface {
+	Create(ctx context.Context, commission *entity.AffiliatorCommission) error
+	FindByAffiliatorID(ctx context.Context, affiliatorID uuid.UUID, page, limit int) ([]*entity.AffiliatorCommission, int, error)
+	GetBalance(ctx context.Context, affiliatorID uuid.UUID) (float64, error)
+	GetTotalEarned(ctx context.Context, affiliatorID uuid.UUID) (float64, error)
+}
+
+type AffiliatorWithdrawalRepository interface {
+	Create(ctx context.Context, withdrawal *entity.AffiliatorWithdrawal) error
+	FindByID(ctx context.Context, id uuid.UUID) (*entity.AffiliatorWithdrawal, error)
+	FindByAffiliatorID(ctx context.Context, affiliatorID uuid.UUID, page, limit int) ([]*entity.AffiliatorWithdrawal, int, error)
+	FindAll(ctx context.Context, status string, page, limit int) ([]*entity.AffiliatorWithdrawal, int, error)
+	UpdateStatus(ctx context.Context, id uuid.UUID, status, adminNotes string, processedBy uuid.UUID) error
+	GetTotalWithdrawn(ctx context.Context, affiliatorID uuid.UUID) (float64, error)
+	GetTotalPending(ctx context.Context, affiliatorID uuid.UUID) (float64, error)
+}

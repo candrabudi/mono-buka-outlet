@@ -19,11 +19,11 @@ func NewUserRepo(db *sql.DB) *UserRepo {
 }
 
 func (r *UserRepo) Create(ctx context.Context, user *entity.User) error {
-	query := `INSERT INTO users (id, name, email, password, phone, role, referral_code, is_active, created_at, updated_at) 
-			  VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`
+	query := `INSERT INTO users (id, name, email, password, phone, role, referral_code, referred_by, is_active, created_at, updated_at) 
+			  VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`
 	_, err := r.db.ExecContext(ctx, query,
 		user.ID, user.Name, user.Email, user.Password, user.Phone,
-		user.Role, nilIfEmpty(user.ReferralCode), user.IsActive, user.CreatedAt, user.UpdatedAt,
+		user.Role, nilIfEmpty(user.ReferralCode), user.ReferredBy, user.IsActive, user.CreatedAt, user.UpdatedAt,
 	)
 	return err
 }
@@ -38,17 +38,22 @@ func nilIfEmpty(s string) interface{} {
 func (r *UserRepo) FindByID(ctx context.Context, id uuid.UUID) (*entity.User, error) {
 	user := &entity.User{}
 	var referralCode sql.NullString
-	query := `SELECT id, name, email, password, phone, role, referral_code, is_active, created_at, updated_at 
+	var referredBy sql.NullString
+	query := `SELECT id, name, email, password, phone, role, referral_code, referred_by, is_active, created_at, updated_at 
 			  FROM users WHERE id = $1 AND deleted_at IS NULL`
 	err := r.db.QueryRowContext(ctx, query, id).Scan(
 		&user.ID, &user.Name, &user.Email, &user.Password, &user.Phone,
-		&user.Role, &referralCode, &user.IsActive, &user.CreatedAt, &user.UpdatedAt,
+		&user.Role, &referralCode, &referredBy, &user.IsActive, &user.CreatedAt, &user.UpdatedAt,
 	)
 	if err == sql.ErrNoRows {
-		return nil, fmt.Errorf("user not found")
+		return nil, fmt.Errorf("user tidak ditemukan")
 	}
 	if referralCode.Valid {
 		user.ReferralCode = referralCode.String
+	}
+	if referredBy.Valid {
+		uid, _ := uuid.Parse(referredBy.String)
+		user.ReferredBy = &uid
 	}
 	return user, err
 }
@@ -56,17 +61,22 @@ func (r *UserRepo) FindByID(ctx context.Context, id uuid.UUID) (*entity.User, er
 func (r *UserRepo) FindByEmail(ctx context.Context, email string) (*entity.User, error) {
 	user := &entity.User{}
 	var referralCode sql.NullString
-	query := `SELECT id, name, email, password, phone, role, referral_code, is_active, created_at, updated_at 
+	var referredBy sql.NullString
+	query := `SELECT id, name, email, password, phone, role, referral_code, referred_by, is_active, created_at, updated_at 
 			  FROM users WHERE email = $1 AND deleted_at IS NULL`
 	err := r.db.QueryRowContext(ctx, query, email).Scan(
 		&user.ID, &user.Name, &user.Email, &user.Password, &user.Phone,
-		&user.Role, &referralCode, &user.IsActive, &user.CreatedAt, &user.UpdatedAt,
+		&user.Role, &referralCode, &referredBy, &user.IsActive, &user.CreatedAt, &user.UpdatedAt,
 	)
 	if err == sql.ErrNoRows {
-		return nil, fmt.Errorf("user not found")
+		return nil, fmt.Errorf("user tidak ditemukan")
 	}
 	if referralCode.Valid {
 		user.ReferralCode = referralCode.String
+	}
+	if referredBy.Valid {
+		uid, _ := uuid.Parse(referredBy.String)
+		user.ReferredBy = &uid
 	}
 	return user, err
 }
@@ -88,7 +98,7 @@ func (r *UserRepo) FindAll(ctx context.Context, role string, page, limit int) ([
 		return nil, 0, err
 	}
 
-	query := "SELECT id, name, email, phone, role, referral_code, is_active, created_at, updated_at FROM users WHERE deleted_at IS NULL"
+	query := "SELECT id, name, email, phone, role, referral_code, referred_by, is_active, created_at, updated_at FROM users WHERE deleted_at IS NULL"
 	queryArgs := []interface{}{}
 	queryArgIdx := 1
 
@@ -111,15 +121,20 @@ func (r *UserRepo) FindAll(ctx context.Context, role string, page, limit int) ([
 	for rows.Next() {
 		user := &entity.User{}
 		var referralCode sql.NullString
+		var referredBy sql.NullString
 		err := rows.Scan(
 			&user.ID, &user.Name, &user.Email, &user.Phone,
-			&user.Role, &referralCode, &user.IsActive, &user.CreatedAt, &user.UpdatedAt,
+			&user.Role, &referralCode, &referredBy, &user.IsActive, &user.CreatedAt, &user.UpdatedAt,
 		)
 		if err != nil {
 			return nil, 0, err
 		}
 		if referralCode.Valid {
 			user.ReferralCode = referralCode.String
+		}
+		if referredBy.Valid {
+			uid, _ := uuid.Parse(referredBy.String)
+			user.ReferredBy = &uid
 		}
 		users = append(users, user)
 	}
@@ -128,10 +143,10 @@ func (r *UserRepo) FindAll(ctx context.Context, role string, page, limit int) ([
 }
 
 func (r *UserRepo) Update(ctx context.Context, user *entity.User) error {
-	query := `UPDATE users SET name = $1, email = $2, phone = $3, role = $4, is_active = $5, updated_at = $6, password = $7, referral_code = $8
-			  WHERE id = $9 AND deleted_at IS NULL`
+	query := `UPDATE users SET name = $1, email = $2, phone = $3, role = $4, is_active = $5, updated_at = $6, password = $7, referral_code = $8, referred_by = $9
+			  WHERE id = $10 AND deleted_at IS NULL`
 	_, err := r.db.ExecContext(ctx, query,
-		user.Name, user.Email, user.Phone, user.Role, user.IsActive, time.Now(), user.Password, nilIfEmpty(user.ReferralCode), user.ID,
+		user.Name, user.Email, user.Phone, user.Role, user.IsActive, time.Now(), user.Password, nilIfEmpty(user.ReferralCode), user.ReferredBy, user.ID,
 	)
 	return err
 }
@@ -146,7 +161,7 @@ func (r *UserRepo) FindByReferralCode(ctx context.Context, code string) (*entity
 		&user.Role, &referralCode, &user.IsActive, &user.CreatedAt, &user.UpdatedAt,
 	)
 	if err == sql.ErrNoRows {
-		return nil, fmt.Errorf("affiliator not found")
+		return nil, fmt.Errorf("affiliator tidak ditemukan")
 	}
 	if referralCode.Valid {
 		user.ReferralCode = referralCode.String

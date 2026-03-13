@@ -16,6 +16,7 @@ type MitraHandler struct {
 	outletRepo repository.OutletRepository
 	pkgRepo    repository.OutletPackageRepository
 	partRepo   repository.PartnershipRepository
+	userRepo   repository.UserRepository
 }
 
 func NewMitraHandler(
@@ -23,12 +24,14 @@ func NewMitraHandler(
 	outletRepo repository.OutletRepository,
 	pkgRepo repository.OutletPackageRepository,
 	partRepo repository.PartnershipRepository,
+	userRepo repository.UserRepository,
 ) *MitraHandler {
 	return &MitraHandler{
 		appRepo:    appRepo,
 		outletRepo: outletRepo,
 		pkgRepo:    pkgRepo,
 		partRepo:   partRepo,
+		userRepo:   userRepo,
 	}
 }
 
@@ -280,6 +283,13 @@ func (h *MitraHandler) ReviewApplication(c *gin.Context) {
 			CreatedAt:          now,
 			UpdatedAt:          now,
 		}
+
+		// Link to affiliator if mitra was referred
+		mitraUser, _ := h.userRepo.FindByID(c.Request.Context(), app.MitraID)
+		if mitraUser != nil && mitraUser.ReferredBy != nil {
+			partnership.AffiliatorID = mitraUser.ReferredBy
+		}
+
 		if err := h.partRepo.Create(c.Request.Context(), partnership); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"success": false, "error": "Pengajuan disetujui tapi gagal membuat partnership: " + err.Error()})
 			return

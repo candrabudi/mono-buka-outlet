@@ -81,6 +81,15 @@
                 <span v-if="touched.confirm && errors.confirm" class="field-error">{{ errors.confirm }}</span>
               </div>
 
+              <div class="input-group">
+                <label for="referral_code">Kode Referral Affiliator <span class="optional-badge">Opsional</span></label>
+                <div class="input-wrapper">
+                  <i class="input-icon ri-gift-line"></i>
+                  <input id="referral_code" v-model="form.referral_code" type="text" placeholder="Contoh: AFF-A1B2C3D4" @blur="touched.referral = true" />
+                </div>
+                <span v-if="form.referral_code" class="field-hint"><i class="ri-information-line"></i> Kode dari affiliator yang mereferensikan Anda</span>
+              </div>
+
               <button type="submit" class="btn-login" :disabled="loading || !canSubmit">
                 <span v-if="loading" class="spinner"></span>
                 {{ loading ? 'Mendaftar...' : 'Daftar Sekarang' }}
@@ -121,18 +130,27 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, reactive, computed, onMounted } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { authApi } from '../services/api'
 import { useToastStore } from '../stores/toast'
 
 const toast = useToastStore()
 const router = useRouter()
+const route = useRoute()
 const loading = ref(false)
 const showPw = ref(false)
 const showPwConfirm = ref(false)
-const form = reactive({ name: '', email: '', phone: '', password: '', confirm_password: '' })
-const touched = reactive({ name: false, email: false, phone: false, password: false, confirm: false })
+const form = reactive({ name: '', email: '', phone: '', password: '', confirm_password: '', referral_code: '' })
+const touched = reactive({ name: false, email: false, phone: false, password: false, confirm: false, referral: false })
+
+// Auto-fill from URL query parameter (?ref=AFF-XXXX)
+onMounted(() => {
+  const ref_code = route.query.ref
+  if (ref_code) {
+    form.referral_code = ref_code
+  }
+})
 
 // Password strength checks
 const pwChecks = computed(() => ({
@@ -238,6 +256,9 @@ async function handleRegister() {
 .login-footer-links a { font-size: 13px; color: #718096; text-decoration: none; }
 .login-footer-links a:hover { color: #1a202c; }
 .login-copyright { text-align: center; font-size: 13px; color: #a0aec0; margin-top: 16px; }
+.optional-badge { display: inline-block; font-size: 11px; font-weight: 600; color: #718096; background: #f1f5f9; padding: 2px 8px; border-radius: 4px; margin-left: 6px; vertical-align: middle; }
+.field-hint { display: flex; align-items: center; gap: 4px; font-size: 12px; color: #94a3b8; margin-top: 6px; font-weight: 500; }
+.field-hint i { font-size: 13px; }
 .login-right { flex: 1; background: #FFF9F3; padding: 80px; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; }
 .floating-shapes { list-style: none; padding: 0; margin: 0; }
 .shape { position: absolute; opacity: 0.5; animation: float 6s ease-in-out infinite; }

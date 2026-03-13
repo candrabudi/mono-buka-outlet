@@ -37,7 +37,7 @@ func (h *PaymentHandler) Create(c *gin.Context) {
 func (h *PaymentHandler) Verify(c *gin.Context) {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "ID tidak valid"})
 		return
 	}
 	var req struct {
@@ -58,7 +58,7 @@ func (h *PaymentHandler) Verify(c *gin.Context) {
 func (h *PaymentHandler) GetByPartnership(c *gin.Context) {
 	pid, err := uuid.Parse(c.Param("partnership_id"))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "ID tidak valid"})
 		return
 	}
 	list, err := h.paymentUC.GetByPartnership(c.Request.Context(), pid)

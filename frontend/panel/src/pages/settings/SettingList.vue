@@ -35,10 +35,7 @@
             <div class="st-field-desc">{{ s.description }}</div>
           </div>
           <div class="st-field-right">
-            <select v-if="s.key === 'midtrans_environment'" v-model="formData[s.key]" :id="s.key" class="st-input st-select">
-              <option value="sandbox">Sandbox</option>
-              <option value="production">Production</option>
-            </select>
+            <SearchSelect v-if="s.key === 'midtrans_environment'" v-model="formData[s.key]" :options="envOptions" placeholder="Pilih environment" :allow-empty="false" />
             <input v-else v-model="formData[s.key]" :id="s.key" :type="isSecret(s.key) ? 'password' : 'text'" class="st-input" :placeholder="s.label" />
             <button v-if="isSecret(s.key)" @click="toggleShow(s.key)" class="st-toggle-eye" :title="shown[s.key] ? 'Sembunyikan' : 'Tampilkan'">
               <svg v-if="!shown[s.key]" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
@@ -58,6 +55,7 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { settingApi } from '../../services/api'
 import { useToastStore } from '../../stores/toast'
+import SearchSelect from '../../components/SearchSelect.vue'
 
 const toast = useToastStore()
 const settings = ref([])
@@ -65,6 +63,11 @@ const activeGroup = ref('midtrans')
 const saving = ref(false)
 const formData = reactive({})
 const shown = reactive({})
+
+const envOptions = [
+  { value: 'sandbox', label: 'Sandbox' },
+  { value: 'production', label: 'Production' },
+]
 
 const groups = [
   { key: 'midtrans', label: 'Payment Gateway', icon: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>' },

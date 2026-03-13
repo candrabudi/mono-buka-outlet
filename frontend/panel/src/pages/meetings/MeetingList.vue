@@ -27,22 +27,8 @@
         <input v-model="search" class="mt-search" placeholder="Cari meeting..." />
       </div>
       <div class="mt-filters">
-        <select v-model="filterType" class="mt-select">
-          <option value="">Semua Tipe</option>
-          <option value="edukasi">Edukasi</option>
-          <option value="closing">Closing</option>
-          <option value="review_lokasi">Review Lokasi</option>
-          <option value="operasional">Operasional</option>
-        </select>
-        <select v-model="filterStatus" class="mt-select">
-          <option value="">Semua Status</option>
-          <option value="scheduled">Scheduled</option>
-          <option value="ongoing">Ongoing</option>
-          <option value="completed">Completed</option>
-          <option value="waiting_decision">Waiting Decision</option>
-          <option value="approved">Approved</option>
-          <option value="cancelled">Cancelled</option>
-        </select>
+        <SearchSelect v-model="filterType" :options="typeFilterOpts" placeholder="Semua Tipe" empty-label="Semua Tipe" @update:model-value="loadMeetings" />
+        <SearchSelect v-model="filterStatus" :options="statusFilterOpts" placeholder="Semua Status" empty-label="Semua Status" @update:model-value="loadMeetings" />
       </div>
     </div>
 
@@ -109,12 +95,7 @@
             <div class="mt-frow">
               <div class="mt-fg">
                 <label>Tipe <span class="req">*</span></label>
-                <select v-model="form.meeting_type" class="mt-input">
-                  <option value="edukasi">Edukasi</option>
-                  <option value="closing">Closing</option>
-                  <option value="review_lokasi">Review Lokasi</option>
-                  <option value="operasional">Operasional</option>
-                </select>
+                <SearchSelect v-model="form.meeting_type" :options="typeFormOpts" placeholder="Pilih tipe" :allow-empty="false" />
               </div>
               <div class="mt-fg">
                 <label>Durasi (menit)</label>
@@ -137,14 +118,7 @@
             </div>
             <div v-if="editMode" class="mt-fg">
               <label>Status</label>
-              <select v-model="form.status" class="mt-input">
-                <option value="scheduled">Scheduled</option>
-                <option value="ongoing">Ongoing</option>
-                <option value="completed">Completed</option>
-                <option value="waiting_decision">Waiting Decision</option>
-                <option value="approved">Approved</option>
-                <option value="cancelled">Cancelled</option>
-              </select>
+              <SearchSelect v-model="form.status" :options="statusFormOpts" placeholder="Pilih status" :allow-empty="false" />
             </div>
             <div class="mt-modal-foot">
               <button type="button" @click="showForm=false" class="mt-btn-sec">Batal</button>
@@ -217,13 +191,7 @@
                 <div class="mt-frow">
                   <div class="mt-fg">
                     <label>Keputusan</label>
-                    <select v-model="notesForm.decision" class="mt-input">
-                      <option value="">Belum ada</option>
-                      <option value="lanjut_dp">Lanjut DP</option>
-                      <option value="revisi_proposal">Revisi Proposal</option>
-                      <option value="survei_ulang">Survei Ulang</option>
-                      <option value="tidak_lanjut">Tidak Lanjut</option>
-                    </select>
+                    <SearchSelect v-model="notesForm.decision" :options="decisionOpts" placeholder="Belum ada" empty-label="Belum ada" />
                   </div>
                   <div class="mt-fg"><label>Next Step</label><textarea v-model="notesForm.next_step" class="mt-textarea" rows="2"></textarea></div>
                 </div>
@@ -287,21 +255,11 @@
           <form @submit.prevent="addParticipant" class="mt-modal-body">
             <div class="mt-fg">
               <label>Role <span class="req">*</span></label>
-              <select v-model="partForm.role" class="mt-input">
-                <option value="sales">Sales</option>
-                <option value="brand_manager">Brand Manager</option>
-                <option value="legal">Legal</option>
-                <option value="finance">Finance</option>
-                <option value="mitra">Mitra</option>
-                <option value="owner">Owner</option>
-              </select>
+              <SearchSelect v-model="partForm.role" :options="roleOpts" placeholder="Pilih role" :allow-empty="false" />
             </div>
             <div class="mt-fg">
               <label>Pilih User Internal (opsional)</label>
-              <select v-model="partForm.user_id" class="mt-input">
-                <option value="">-- Eksternal --</option>
-                <option v-for="u in users" :key="u.id" :value="u.id">{{ u.name }} ({{ u.role }})</option>
-              </select>
+              <SearchSelect v-model="partForm.user_id" :options="userSelectOpts" placeholder="-- Eksternal --" empty-label="-- Eksternal --" search-placeholder="Cari user..." />
             </div>
             <div v-if="!partForm.user_id">
               <div class="mt-fg"><label>Nama</label><input v-model="partForm.external_name" class="mt-input" placeholder="Nama peserta" /></div>
@@ -336,9 +294,10 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { meetingApi, userApi } from '../../services/api'
 import { useToastStore } from '../../stores/toast'
+import SearchSelect from '../../components/SearchSelect.vue'
 
 const toast = useToastStore()
 const meetings = ref([])
@@ -347,6 +306,37 @@ const loading = ref(false)
 const search = ref('')
 const filterType = ref('')
 const filterStatus = ref('')
+
+const typeFilterOpts = [
+  { value: 'edukasi', label: 'Edukasi' },
+  { value: 'closing', label: 'Closing' },
+  { value: 'review_lokasi', label: 'Review Lokasi' },
+  { value: 'operasional', label: 'Operasional' },
+]
+const statusFilterOpts = [
+  { value: 'scheduled', label: 'Scheduled' },
+  { value: 'ongoing', label: 'Ongoing' },
+  { value: 'completed', label: 'Completed' },
+  { value: 'waiting_decision', label: 'Waiting Decision' },
+  { value: 'approved', label: 'Approved' },
+  { value: 'cancelled', label: 'Cancelled' },
+]
+const typeFormOpts = typeFilterOpts
+const statusFormOpts = statusFilterOpts
+const decisionOpts = [
+  { value: 'lanjut_dp', label: 'Lanjut DP' },
+  { value: 'revisi_proposal', label: 'Revisi Proposal' },
+  { value: 'survei_ulang', label: 'Survei Ulang' },
+  { value: 'tidak_lanjut', label: 'Tidak Lanjut' },
+]
+const roleOpts = [
+  { value: 'sales', label: 'Sales' },
+  { value: 'brand_manager', label: 'Brand Manager' },
+  { value: 'legal', label: 'Legal' },
+  { value: 'finance', label: 'Finance' },
+  { value: 'mitra', label: 'Mitra' },
+  { value: 'owner', label: 'Owner' },
+]
 
 const showForm = ref(false)
 const editMode = ref(false)
@@ -367,6 +357,7 @@ const tabs = [
 const showAddParticipant = ref(false)
 const partForm = reactive({ user_id:'', external_name:'', external_email:'', external_phone:'', role:'mitra' })
 const users = ref([])
+const userSelectOpts = computed(() => users.value.map(u => ({ value: u.id, label: u.name, sub: u.role })))
 
 const showAddAction = ref(false)
 const actionForm = reactive({ task_name:'', pic:'', deadline:'' })
@@ -411,8 +402,6 @@ async function loadMeetings() {
   finally { loading.value = false }
 }
 
-// Watch filters
-import { watch } from 'vue'
 watch([filterType, filterStatus], () => loadMeetings())
 
 function openCreate() {

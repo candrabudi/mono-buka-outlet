@@ -14,10 +14,14 @@ type User struct {
 	Phone        string     `json:"phone"`
 	Role         string     `json:"role"`
 	ReferralCode string     `json:"referral_code,omitempty"`
+	ReferredBy   *uuid.UUID `json:"referred_by,omitempty"`
 	IsActive     bool       `json:"is_active"`
 	CreatedAt    time.Time  `json:"created_at"`
 	UpdatedAt    time.Time  `json:"updated_at"`
 	DeletedAt    *time.Time `json:"deleted_at,omitempty"`
+
+	// Relations
+	Referrer *User `json:"referrer,omitempty"`
 }
 
 const (

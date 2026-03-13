@@ -33,7 +33,7 @@ func (h *RevenueHandler) Create(c *gin.Context) {
 func (h *RevenueHandler) GetByPartnership(c *gin.Context) {
 	pid, err := uuid.Parse(c.Param("partnership_id"))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "ID tidak valid"})
 		return
 	}
 	list, err := h.revenueUC.GetByPartnership(c.Request.Context(), pid)

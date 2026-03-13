@@ -221,6 +221,14 @@
                 <span class="sidebar-link-text">Affiliator</span>
               </router-link>
             </li>
+            <li>
+              <router-link to="/affiliator-management" class="sidebar-link" :class="{ active: $route.path.startsWith('/affiliator-management') }">
+                <span class="sidebar-link-icon">
+                  <Wallet :size="20" />
+                </span>
+                <span class="sidebar-link-text">Komisi & Penarikan</span>
+              </router-link>
+            </li>
             <li v-if="auth.hasRole('master')">
               <router-link to="/users" class="sidebar-link" :class="{ active: $route.path.startsWith('/users') }">
                 <span class="sidebar-link-icon">
@@ -294,7 +302,7 @@
 </template>
 
 <script setup>
-import { Star, LayoutDashboard, LogOut } from 'lucide-vue-next'
+import { Star, LayoutDashboard, LogOut, Wallet } from 'lucide-vue-next'
 import { useAuthStore } from '../stores/auth'
 
 const auth = useAuthStore()

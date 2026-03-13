@@ -54,13 +54,7 @@
               <span class="ai-key-status" :class="cfg.value ? 'status-ok' : 'status-empty'">{{ cfg.value ? 'Terpasang' : 'Belum diisi' }}</span>
             </template>
             <!-- Model -->
-            <select v-else-if="cfg.key === 'openai_model'" v-model="cfg.value" class="ai-input ai-select">
-              <option value="gpt-4o">GPT-4o (Recommended)</option>
-              <option value="gpt-4o-mini">GPT-4o Mini (Faster)</option>
-              <option value="gpt-4-turbo">GPT-4 Turbo</option>
-              <option value="gpt-4">GPT-4</option>
-              <option value="gpt-3.5-turbo">GPT-3.5 Turbo (Cheapest)</option>
-            </select>
+            <SearchSelect v-else-if="cfg.key === 'openai_model'" v-model="cfg.value" :options="modelOptions" placeholder="Pilih model" :allow-empty="false" />
             <!-- Temperature -->
             <template v-else-if="cfg.key === 'openai_temperature'">
               <input type="range" v-model.number="cfg.value" min="0" max="1" step="0.1" class="ai-range" />
@@ -81,10 +75,13 @@
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8"><circle cx="11" cy="11" r="8" stroke-width="2"/><path d="m21 21-4.35-4.35" stroke-width="2" stroke-linecap="round"/></svg>
           <input v-model="kbSearch" type="text" placeholder="Cari knowledge..." />
         </div>
-        <select v-model="kbCategoryFilter" class="ai-filter-select">
-          <option value="">Semua Kategori</option>
-          <option v-for="cat in categories" :key="cat.id" :value="cat.id">{{ cat.name }}</option>
-        </select>
+        <SearchSelect
+          v-model="kbCategoryFilter"
+          :options="categoryFilterOpts"
+          placeholder="Semua Kategori"
+          empty-label="Semua Kategori"
+          search-placeholder="Cari kategori..."
+        />
         <button class="ai-save-btn" @click="showKBForm = true">
           <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
           Tambah
@@ -187,7 +184,7 @@
           <div class="fm-group"><label class="fm-label">Judul <span class="fm-req">*</span></label><input v-model="kbForm.title" class="ai-input" placeholder="Judul knowledge" /></div>
           <div class="fm-row">
             <div class="fm-group"><label class="fm-label">Slug <span class="fm-req">*</span></label><input v-model="kbForm.slug" class="ai-input" placeholder="slug-knowledge" /></div>
-            <div class="fm-group"><label class="fm-label">Kategori</label><select v-model="kbForm.category_id" class="ai-input ai-select"><option value="">Pilih Kategori</option><option v-for="cat in categories" :key="cat.id" :value="cat.id">{{ cat.name }}</option></select></div>
+            <div class="fm-group"><label class="fm-label">Kategori</label><SearchSelect v-model="kbForm.category_id" :options="categoryFormOpts" placeholder="Pilih Kategori" search-placeholder="Cari kategori..." /></div>
           </div>
           <div class="fm-group"><label class="fm-label">Konten <span class="fm-req">*</span></label><textarea v-model="kbForm.content" class="ai-input ai-textarea" rows="10" placeholder="Konten knowledge (markdown supported)"></textarea></div>
           <div class="fm-row">
@@ -233,6 +230,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { aiApi } from '../../services/api'
 import { useToastStore } from '../../stores/toast'
+import SearchSelect from '../../components/SearchSelect.vue'
 
 const toast = useToastStore()
 const activeTab = ref('config')
@@ -255,6 +253,16 @@ const kbForm = ref({ title: '', slug: '', content: '', category_id: '', keywords
 const promptForm = ref({ name: '', prompt: '', is_active: true })
 const catForm = ref({ name: '', slug: '', description: '', sort_order: 0 })
 const showApiKey = ref(false)
+
+const modelOptions = [
+  { value: 'gpt-4o', label: 'GPT-4o (Recommended)' },
+  { value: 'gpt-4o-mini', label: 'GPT-4o Mini (Faster)' },
+  { value: 'gpt-4-turbo', label: 'GPT-4 Turbo' },
+  { value: 'gpt-4', label: 'GPT-4' },
+  { value: 'gpt-3.5-turbo', label: 'GPT-3.5 Turbo (Cheapest)' },
+]
+const categoryFilterOpts = computed(() => categories.value.map(c => ({ value: c.id, label: c.name })))
+const categoryFormOpts = computed(() => categories.value.map(c => ({ value: c.id, label: c.name })))
 
 const configLabels = { openai_api_key: 'API Key OpenAI', openai_model: 'Model AI', openai_temperature: 'Temperature (Kreativitas)', openai_max_tokens: 'Max Tokens' }
 const configOrder = ['openai_api_key', 'openai_model', 'openai_temperature', 'openai_max_tokens']

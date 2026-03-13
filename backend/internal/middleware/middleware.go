@@ -18,14 +18,14 @@ func JWTAuth(secret string) gin.HandlerFunc {
 			if tokenParam := c.Query("token"); tokenParam != "" {
 				authHeader = "Bearer " + tokenParam
 			} else {
-				c.JSON(http.StatusUnauthorized, gin.H{"success": false, "error": "Authorization header required"})
+				c.JSON(http.StatusUnauthorized, gin.H{"success": false, "error": "Header Authorization diperlukan"})
 				c.Abort()
 				return
 			}
 		}
 		parts := strings.SplitN(authHeader, " ", 2)
 		if len(parts) != 2 || parts[0] != "Bearer" {
-			c.JSON(http.StatusUnauthorized, gin.H{"success": false, "error": "Invalid authorization format"})
+			c.JSON(http.StatusUnauthorized, gin.H{"success": false, "error": "Format otorisasi tidak valid"})
 			c.Abort()
 			return
 		}
@@ -33,13 +33,13 @@ func JWTAuth(secret string) gin.HandlerFunc {
 			return []byte(secret), nil
 		})
 		if err != nil || !token.Valid {
-			c.JSON(http.StatusUnauthorized, gin.H{"success": false, "error": "Invalid or expired token"})
+			c.JSON(http.StatusUnauthorized, gin.H{"success": false, "error": "Token tidak valid atau sudah kedaluwarsa"})
 			c.Abort()
 			return
 		}
 		claims, ok := token.Claims.(jwt.MapClaims)
 		if !ok {
-			c.JSON(http.StatusUnauthorized, gin.H{"success": false, "error": "Invalid token claims"})
+			c.JSON(http.StatusUnauthorized, gin.H{"success": false, "error": "Token tidak valid"})
 			c.Abort()
 			return
 		}
@@ -59,12 +59,12 @@ func AdminOnly() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		role, exists := c.Get("user_role")
 		if !exists {
-			c.JSON(http.StatusForbidden, gin.H{"success": false, "error": "Access denied"})
+			c.JSON(http.StatusForbidden, gin.H{"success": false, "error": "Akses ditolak"})
 			c.Abort()
 			return
 		}
 		if !entity.IsAdminRole(role.(string)) {
-			c.JSON(http.StatusForbidden, gin.H{"success": false, "error": "Admin access required"})
+			c.JSON(http.StatusForbidden, gin.H{"success": false, "error": "Akses khusus admin"})
 			c.Abort()
 			return
 		}
@@ -76,7 +76,7 @@ func RoleAuth(allowedRoles ...string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		role, exists := c.Get("user_role")
 		if !exists {
-			c.JSON(http.StatusForbidden, gin.H{"success": false, "error": "Role not found"})
+			c.JSON(http.StatusForbidden, gin.H{"success": false, "error": "Role tidak ditemukan"})
 			c.Abort()
 			return
 		}
@@ -87,7 +87,7 @@ func RoleAuth(allowedRoles ...string) gin.HandlerFunc {
 				return
 			}
 		}
-		c.JSON(http.StatusForbidden, gin.H{"success": false, "error": "Insufficient permissions"})
+		c.JSON(http.StatusForbidden, gin.H{"success": false, "error": "Anda tidak memiliki akses untuk fitur ini"})
 		c.Abort()
 	}
 }

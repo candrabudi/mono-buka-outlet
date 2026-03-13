@@ -56,18 +56,20 @@
         <input v-model="filters.search" @input="applyFilters" type="text" placeholder="Cari nama atau email..." />
       </div>
       <div class="user-filter-pills">
-        <select v-model="filters.role" @change="applyFilters" class="user-filter-select">
-          <option value="">Semua Role</option>
-          <option value="master">Master</option>
-          <option value="admin">Admin</option>
-          <option value="finance">Finance</option>
-          <option value="mitra">Mitra</option>
-        </select>
-        <select v-model="filters.status" @change="applyFilters" class="user-filter-select">
-          <option value="">Semua Status</option>
-          <option value="active">Aktif</option>
-          <option value="inactive">Nonaktif</option>
-        </select>
+        <SearchSelect
+          v-model="filters.role"
+          :options="roleFilterOptions"
+          placeholder="Semua Role"
+          empty-label="Semua Role"
+          @update:model-value="applyFilters"
+        />
+        <SearchSelect
+          v-model="filters.status"
+          :options="statusFilterOptions"
+          placeholder="Semua Status"
+          empty-label="Semua Status"
+          @update:model-value="applyFilters"
+        />
       </div>
     </div>
 
@@ -225,13 +227,12 @@
           <div class="form-row">
             <div class="form-group">
               <label class="form-label">Role <span class="required">*</span></label>
-              <select v-model="form.role" class="form-input" required>
-                <option value="" disabled>Pilih role</option>
-                <option value="master">Master</option>
-                <option value="admin">Admin</option>
-                <option value="finance">Finance</option>
-                <option value="mitra">Mitra</option>
-              </select>
+              <SearchSelect
+                v-model="form.role"
+                :options="roleFormOptions"
+                placeholder="Pilih role"
+                :allow-empty="false"
+              />
             </div>
             <div class="form-group">
               <label class="form-label">No. HP</label>
@@ -281,9 +282,27 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import { useAuthStore } from '../../stores/auth'
 import { useToastStore } from '../../stores/toast'
 import { userApi } from '../../services/api'
+import SearchSelect from '../../components/SearchSelect.vue'
 
 const auth = useAuthStore()
 const toast = useToastStore()
+
+const roleFilterOptions = [
+  { value: 'master', label: 'Master' },
+  { value: 'admin', label: 'Admin' },
+  { value: 'finance', label: 'Finance' },
+  { value: 'mitra', label: 'Mitra' },
+]
+const statusFilterOptions = [
+  { value: 'active', label: 'Aktif' },
+  { value: 'inactive', label: 'Nonaktif' },
+]
+const roleFormOptions = [
+  { value: 'master', label: 'Master' },
+  { value: 'admin', label: 'Admin' },
+  { value: 'finance', label: 'Finance' },
+  { value: 'mitra', label: 'Mitra' },
+]
 
 const users = ref([])
 const loading = ref(false)

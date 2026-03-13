@@ -90,6 +90,8 @@ func main() {
 	ebookRepo := postgres.NewEbookRepo(db)
 	ebookOrderRepo := postgres.NewEbookOrderRepo(db)
 	ebookCategoryRepo := postgres.NewEbookCategoryRepo(db)
+	affCommissionRepo := postgres.NewAffiliatorCommissionRepo(db)
+	affWithdrawalRepo := postgres.NewAffiliatorWithdrawalRepo(db)
 
 	emailService := email.NewEmailService(email.SMTPConfig{
 		Host:     cfg.SMTP.Host,
@@ -115,14 +117,14 @@ func main() {
 	chatService := chatbot.NewService(db, cfg.OpenAI.APIKey)
 	aiKnowledgeRepo := postgres.NewAIKnowledgeRepo(db)
 
-	affiliatorUC := usecase.NewAffiliatorUseCase(userRepo, partnershipRepo)
+	affiliatorUC := usecase.NewAffiliatorUseCase(userRepo, partnershipRepo, affCommissionRepo, affWithdrawalRepo)
 
 	invoiceHandler := handler.NewInvoiceHandler(invoiceRepo, partnershipRepo, settingRepo, midtrans.NewService(settingRepo))
 
 	handlers := router.Handlers{
 		Auth:      handler.NewAuthHandler(authUC),
 		AdminAuth: handler.NewAdminAuthHandler(adminAuthUC),
-		Mitra:     handler.NewMitraHandler(partnershipAppRepo, outletRepo, outletPackageRepo, partnershipRepo),
+		Mitra:     handler.NewMitraHandler(partnershipAppRepo, outletRepo, outletPackageRepo, partnershipRepo, userRepo),
 
 		Outlet:         handler.NewOutletHandler(outletUC),
 		OutletCategory: handler.NewOutletCategoryHandler(outletCategoryUC),

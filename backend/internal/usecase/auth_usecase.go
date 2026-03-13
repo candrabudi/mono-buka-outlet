@@ -37,6 +37,7 @@ type RegisterRequest struct {
 	ConfirmPassword string `json:"confirm_password" binding:"required"`
 	Phone           string `json:"phone"`
 	Role            string `json:"role"`
+	ReferralCode    string `json:"referral_code"`
 }
 
 // validateRegister performs strong validation on registration fields
@@ -103,17 +104,17 @@ type AuthResponse struct {
 func (uc *AuthUseCase) Login(ctx context.Context, req LoginRequest) (*AuthResponse, error) {
 	user, err := uc.userRepo.FindByEmail(ctx, req.Email)
 	if err != nil {
-		return nil, fmt.Errorf("invalid email or password")
+		return nil, fmt.Errorf("email atau password salah")
 	}
 	if !user.IsActive {
-		return nil, fmt.Errorf("account is inactive")
+		return nil, fmt.Errorf("akun tidak aktif")
 	}
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password)); err != nil {
-		return nil, fmt.Errorf("invalid email or password")
+		return nil, fmt.Errorf("email atau password salah")
 	}
 	token, err := uc.generateToken(user)
 	if err != nil {
-		return nil, fmt.Errorf("failed to generate token")
+		return nil, fmt.Errorf("gagal membuat token")
 	}
 	return &AuthResponse{Token: token, User: user}, nil
 }
@@ -126,18 +127,18 @@ func (uc *AuthUseCase) Register(ctx context.Context, req RegisterRequest) (*Auth
 
 	existing, _ := uc.userRepo.FindByEmail(ctx, req.Email)
 	if existing != nil {
-		return nil, fmt.Errorf("email already registered")
+		return nil, fmt.Errorf("email sudah terdaftar")
 	}
 	hashed, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
-		return nil, fmt.Errorf("failed to hash password")
+		return nil, fmt.Errorf("gagal memproses password")
 	}
 	role := req.Role
 	if role == "" {
 		role = entity.RoleMitra
 	}
 	if !entity.IsValidRole(role) {
-		return nil, fmt.Errorf("invalid role: %s", role)
+		return nil, fmt.Errorf("role tidak valid: %s", role)
 	}
 	user := &entity.User{
 		ID:        uuid.New(),
@@ -153,12 +154,25 @@ func (uc *AuthUseCase) Register(ctx context.Context, req RegisterRequest) (*Auth
 	if role == entity.RoleAffiliator {
 		user.ReferralCode = generateReferralCode()
 	}
+
+	// Handle optional referral code — link mitra to affiliator
+	if req.ReferralCode != "" {
+		affiliator, err := uc.userRepo.FindByReferralCode(ctx, strings.TrimSpace(req.ReferralCode))
+		if err != nil {
+			return nil, fmt.Errorf("kode referral tidak valid")
+		}
+		if affiliator.Role != entity.RoleAffiliator {
+			return nil, fmt.Errorf("kode referral tidak valid")
+		}
+		user.ReferredBy = &affiliator.ID
+	}
+
 	if err := uc.userRepo.Create(ctx, user); err != nil {
-		return nil, fmt.Errorf("failed to create user: %w", err)
+		return nil, fmt.Errorf("gagal membuat akun: %w", err)
 	}
 	token, err := uc.generateToken(user)
 	if err != nil {
-		return nil, fmt.Errorf("failed to generate token")
+		return nil, fmt.Errorf("gagal membuat token")
 	}
 	return &AuthResponse{Token: token, User: user}, nil
 }

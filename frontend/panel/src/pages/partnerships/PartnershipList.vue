@@ -118,46 +118,52 @@
           </div>
           <form @submit.prevent="create" class="ps-modal-body">
             <div class="ps-fg">
-              <label>Pilih Affiliator <span class="req">*</span></label>
-              <select v-model="form.affiliator_id" class="ps-input" required>
-                <option value="">— Pilih Affiliator —</option>
-                <option v-for="a in affiliators" :key="a.id" :value="a.id">
-                  {{ a.name }} — {{ a.email }}
-                </option>
-              </select>
-              <div class="ps-field-hint">Affiliator yang mereferensikan mitra ini</div>
+              <label>Affiliator <span class="ps-optional-tag">Opsional</span></label>
+              <SearchSelect
+                v-model="form.affiliator_id"
+                :options="affiliatorOptions"
+                placeholder="— Tanpa Affiliator —"
+                search-placeholder="Cari affiliator..."
+                empty-label="— Tanpa Affiliator —"
+              />
+              <div class="ps-field-hint">Affiliator yang mereferensikan mitra ini (tidak wajib)</div>
             </div>
 
             <div class="ps-fg">
               <label>Pilih Mitra <span class="req">*</span></label>
-              <select v-model="form.mitra_id" class="ps-input" required>
-                <option value="">— Pilih Mitra —</option>
-                <option v-for="m in mitras" :key="m.id" :value="m.id">
-                  {{ m.name }} — {{ m.email }}
-                </option>
-              </select>
+              <SearchSelect
+                v-model="form.mitra_id"
+                :options="mitraOptions"
+                placeholder="— Pilih Mitra —"
+                search-placeholder="Cari mitra..."
+                :allow-empty="false"
+              />
               <div class="ps-field-hint">User mitra yang akan menjadi partner</div>
             </div>
 
             <div class="ps-fg">
               <label>Pilih Outlet <span class="req">*</span></label>
-              <select v-model="form.outlet_id" class="ps-input" required @change="onOutletChange">
-                <option value="">— Pilih Outlet —</option>
-                <option v-for="o in outlets" :key="o.id" :value="o.id">
-                  {{ o.name }}
-                </option>
-              </select>
+              <SearchSelect
+                v-model="form.outlet_id"
+                :options="outletOptions"
+                placeholder="— Pilih Outlet —"
+                search-placeholder="Cari outlet..."
+                :allow-empty="false"
+                @update:model-value="onOutletChange"
+              />
               <div class="ps-field-hint">Outlet franchise yang diambil mitra</div>
             </div>
 
             <div class="ps-fg">
               <label>Pilih Paket <span class="req">*</span></label>
-              <select v-model="form.package_id" class="ps-input" required :disabled="!form.outlet_id || loadingPkgs">
-                <option value="">{{ loadingPkgs ? 'Memuat paket...' : '— Pilih Paket —' }}</option>
-                <option v-for="pkg in packages" :key="pkg.id" :value="pkg.id">
-                  {{ pkg.name }} — Rp {{ pkg.price?.toLocaleString('id-ID') }}
-                </option>
-              </select>
+              <SearchSelect
+                v-model="form.package_id"
+                :options="packageOptions"
+                :placeholder="loadingPkgs ? 'Memuat paket...' : '— Pilih Paket —'"
+                search-placeholder="Cari paket..."
+                :allow-empty="false"
+                :disabled="!form.outlet_id || loadingPkgs"
+              />
               <div class="ps-field-hint">Paket investasi yang dipilih mitra</div>
             </div>
 
@@ -179,6 +185,7 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import { Plus, Search, ExternalLink, Users, X } from 'lucide-vue-next'
 import { partnershipApi, userApi, outletApi, outletPackageApi, invoiceApi } from '../../services/api'
 import { useToastStore } from '../../stores/toast'
+import SearchSelect from '../../components/SearchSelect.vue'
 
 const toast = useToastStore()
 const partnerships = ref([])
@@ -194,6 +201,12 @@ const outlets = ref([])
 const packages = ref([])
 const loadingPkgs = ref(false)
 const syncingAll = ref(false)
+
+// Computed options for SearchSelect
+const affiliatorOptions = computed(() => affiliators.value.map(a => ({ value: a.id, label: a.name, sub: a.email })))
+const mitraOptions = computed(() => mitras.value.map(m => ({ value: m.id, label: m.name, sub: m.email })))
+const outletOptions = computed(() => outlets.value.map(o => ({ value: o.id, label: o.name })))
+const packageOptions = computed(() => packages.value.map(p => ({ value: p.id, label: p.name, sub: `Rp ${p.price?.toLocaleString('id-ID')}` })))
 
 const avatarGradients = [
   'linear-gradient(135deg, #667eea, #764ba2)',
@@ -346,8 +359,8 @@ async function onOutletChange() {
 }
 
 async function create() {
-  if (!form.affiliator_id || !form.mitra_id) {
-    toast.error('Pilih Affiliator dan Mitra')
+  if (!form.mitra_id) {
+    toast.error('Pilih Mitra')
     return
   }
   if (!form.outlet_id || !form.package_id) {
@@ -357,10 +370,12 @@ async function create() {
   saving.value = true
   try {
     const payload = {
-      affiliator_id: form.affiliator_id,
       mitra_id: form.mitra_id,
       outlet_id: form.outlet_id,
       package_id: form.package_id,
+    }
+    if (form.affiliator_id) {
+      payload.affiliator_id = form.affiliator_id
     }
     await partnershipApi.create(payload)
     toast.success('Partnership berhasil dibuat')
@@ -463,6 +478,7 @@ async function create() {
 .ps-input:focus { border-color: #6366f1; background: #fff; }
 select.ps-input { background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e"); background-position: right 12px center; background-repeat: no-repeat; background-size: 16px; padding-right: 36px; cursor: pointer; }
 .ps-field-hint { font-size: .72rem; color: #94a3b8; margin-top: 4px; }
+.ps-optional-tag { font-size: .68rem; font-weight: 500; color: #94a3b8; background: #f1f5f9; padding: 2px 8px; border-radius: 6px; margin-left: 6px; }
 
 /* ═══ SYNC BUTTON ═══ */
 .ps-toolbar { margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }

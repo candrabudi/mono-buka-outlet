@@ -232,9 +232,22 @@ export const aiApi = {
   invalidateCache: () => api.post('/ai/cache/invalidate'),
 }
 
-// Affiliator
+// Affiliator self-service
 export const affiliatorApi = {
   dashboard: () => api.get('/affiliator/dashboard'),
   partnerships: (params) => api.get('/affiliator/partnerships', { params }),
   referralCode: () => api.get('/affiliator/referral-code'),
+  commissions: (params) => api.get('/affiliator/commissions', { params }),
+  balance: () => api.get('/affiliator/balance'),
+  requestWithdrawal: (data) => api.post('/affiliator/withdrawals', data),
+  withdrawals: (params) => api.get('/affiliator/withdrawals', { params }),
+}
+
+// Affiliator Management (admin)
+export const affiliatorMgmtApi = {
+  giveCommission: (data) => api.post('/affiliator-management/commissions', data),
+  getCommissions: (id, params) => api.get(`/affiliator-management/commissions/${id}`, { params }),
+  getWithdrawals: (params) => api.get('/affiliator-management/withdrawals', { params }),
+  getWithdrawal: (id) => api.get(`/affiliator-management/withdrawals/${id}`),
+  processWithdrawal: (id, data) => api.patch(`/affiliator-management/withdrawals/${id}`, data),
 }

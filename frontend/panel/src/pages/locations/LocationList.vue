@@ -23,10 +23,13 @@
         <input v-model="search" class="lc-search" placeholder="Cari lokasi atau alamat..." @input="onFilter" />
       </div>
       <div class="lc-filters">
-        <select v-model="filterStatus" class="lc-select" @change="onFilter">
-          <option value="">Semua Status</option>
-          <option v-for="st in statuses" :key="st.val" :value="st.val">{{ st.label }}</option>
-        </select>
+        <SearchSelect
+          v-model="filterStatus"
+          :options="statusSelectOptions"
+          placeholder="Semua Status"
+          empty-label="Semua Status"
+          @update:model-value="onFilter"
+        />
         <input v-model="filterKota" class="lc-select lc-kota-input" placeholder="Filter kota..." @input="onFilter" />
       </div>
     </div>
@@ -80,6 +83,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { locationApi } from '../../services/api'
 import { useToastStore } from '../../stores/toast'
+import SearchSelect from '../../components/SearchSelect.vue'
 
 const toast = useToastStore()
 const list = ref([])
@@ -98,6 +102,7 @@ const statuses = [
   { val:'REJECTED', label:'Ditolak' },
   { val:'REVISION_NEEDED', label:'Revisi' },
 ]
+const statusSelectOptions = statuses.map(s => ({ value: s.val, label: s.label }))
 
 const stats = computed(() => {
   const all = list.value

@@ -39,22 +39,28 @@
         <input v-model="filters.search" @input="debouncedLoad" type="text" placeholder="Cari outlet..." class="outlet-search-input" />
       </div>
       <div class="outlet-filter-pills">
-        <select v-model="filters.category_id" @change="loadOutlets" class="outlet-filter-select">
-          <option value="">Semua Kategori</option>
-          <option v-for="cat in categories" :key="cat.id" :value="cat.id">
-            {{ cat.name }}
-          </option>
-        </select>
-        <select v-model="filters.active" @change="loadOutlets" class="outlet-filter-select">
-          <option value="">Status</option>
-          <option value="true">Aktif</option>
-          <option value="false">Nonaktif</option>
-        </select>
-        <select v-model="filters.featured" @change="loadOutlets" class="outlet-filter-select">
-          <option value="">Featured</option>
-          <option value="true">Featured</option>
-          <option value="false">Regular</option>
-        </select>
+        <SearchSelect
+          v-model="filters.category_id"
+          :options="categoryOptions"
+          placeholder="Semua Kategori"
+          empty-label="Semua Kategori"
+          search-placeholder="Cari kategori..."
+          @update:model-value="loadOutlets"
+        />
+        <SearchSelect
+          v-model="filters.active"
+          :options="activeOptions"
+          placeholder="Status"
+          empty-label="Semua Status"
+          @update:model-value="loadOutlets"
+        />
+        <SearchSelect
+          v-model="filters.featured"
+          :options="featuredOptions"
+          placeholder="Featured"
+          empty-label="Semua"
+          @update:model-value="loadOutlets"
+        />
       </div>
     </div>
 
@@ -196,6 +202,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { outletApi, outletCategoryApi } from '../../services/api'
 import { useToastStore } from '../../stores/toast'
+import SearchSelect from '../../components/SearchSelect.vue'
 
 const toast = useToastStore()
 const outlets = ref([])
@@ -206,6 +213,16 @@ const deleting = ref(false)
 
 const filters = ref({ search: '', category_id: '', active: '', featured: '', page: 1 })
 const categories = ref([])
+
+const categoryOptions = computed(() => categories.value.map(c => ({ value: c.id, label: c.name })))
+const activeOptions = [
+  { value: 'true', label: 'Aktif' },
+  { value: 'false', label: 'Nonaktif' },
+]
+const featuredOptions = [
+  { value: 'true', label: 'Featured' },
+  { value: 'false', label: 'Regular' },
+]
 
 const activeCount = computed(() => outlets.value.filter(o => o.is_active).length)
 const featuredCount = computed(() => outlets.value.filter(o => o.is_featured).length)

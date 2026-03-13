@@ -37,10 +37,14 @@
               </div>
               <div class="form-field">
                 <label class="form-field-label">Kategori <span class="req">*</span></label>
-                <select v-model="form.category_id" class="form-field-input" :class="{ 'is-error': errors.category_id }" @change="validateField('category_id')">
-                  <option value="">Pilih kategori...</option>
-                  <option v-for="cat in categories" :key="cat.id" :value="cat.id">{{ cat.name }}</option>
-                </select>
+                <SearchSelect
+                  v-model="form.category_id"
+                  :options="categoryOptions"
+                  placeholder="Pilih kategori..."
+                  search-placeholder="Cari kategori..."
+                  :allow-empty="false"
+                  @update:model-value="validateField('category_id')"
+                />
                 <div v-if="errors.category_id" class="form-field-error">{{ errors.category_id }}</div>
               </div>
             </div>
@@ -376,6 +380,7 @@ import { ref, reactive, computed, onMounted, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { outletApi, outletCategoryApi, uploadApi, outletPackageApi } from '../../services/api'
 import { useToastStore } from '../../stores/toast'
+import SearchSelect from '../../components/SearchSelect.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -386,6 +391,7 @@ const submitting = ref(false)
 const editorRef = ref(null)
 const activeTab = ref(0)
 const categories = ref([])
+const categoryOptions = computed(() => categories.value.map(c => ({ value: c.id, label: c.name })))
 const uploadingLogo = ref(false)
 const uploadingBanner = ref(false)
 

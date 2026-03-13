@@ -33,7 +33,7 @@ func (h *AgreementHandler) Create(c *gin.Context) {
 func (h *AgreementHandler) Sign(c *gin.Context) {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "ID tidak valid"})
 		return
 	}
 	userID := c.MustGet("user_id").(uuid.UUID)
@@ -47,7 +47,7 @@ func (h *AgreementHandler) Sign(c *gin.Context) {
 func (h *AgreementHandler) GetByPartnership(c *gin.Context) {
 	pid, err := uuid.Parse(c.Param("partnership_id"))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "ID tidak valid"})
 		return
 	}
 	list, err := h.agreementUC.GetByPartnership(c.Request.Context(), pid)

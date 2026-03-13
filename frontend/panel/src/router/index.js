@@ -63,6 +63,9 @@ const routes = [
       // AI Konsultan — master, admin
       { path: 'ai-settings', name: 'AISettings', component: () => import('../pages/ai/AISettings.vue'), meta: { roles: ['master', 'admin'], title: 'AI Konsultan' } },
 
+      // Affiliator Management — master, admin
+      { path: 'affiliator-management', name: 'AffiliatorManagement', component: () => import('../pages/affiliator/AffiliatorManagement.vue'), meta: { roles: ['master', 'admin'], title: 'Manajemen Affiliator' } },
+
       // Affiliator — affiliator self-service
       { path: 'affiliator-dashboard', name: 'AffiliatorDashboard', component: () => import('../pages/affiliator/AffiliatorDashboard.vue'), meta: { roles: ['affiliator'], title: 'Dashboard Affiliator' } },
     ],

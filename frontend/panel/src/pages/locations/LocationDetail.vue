@@ -229,12 +229,12 @@
           </div>
           <form @submit.prevent="submitApproval" class="lc-modal-body">
             <div class="lc-fg"><label><i class="ri-checkbox-circle-line"></i> Keputusan <span class="req">*</span></label>
-              <select v-model="approvalForm.decision" class="lc-input" required>
-                <option value="">Pilih keputusan</option>
-                <option value="approved">Setujui</option>
-                <option value="rejected">Tolak</option>
-                <option value="revision">Minta Revisi</option>
-              </select>
+              <SearchSelect
+                v-model="approvalForm.decision"
+                :options="decisionOptions"
+                placeholder="Pilih keputusan"
+                :allow-empty="false"
+              />
             </div>
             <div class="lc-fg"><label><i class="ri-chat-3-line"></i> Catatan {{ approvalForm.decision==='rejected'?'(wajib)':'' }}</label><textarea v-model="approvalForm.note" class="lc-input lc-textarea" :required="approvalForm.decision==='rejected'" placeholder="Alasan keputusan..."></textarea></div>
             <div class="lc-modal-foot"><button type="button" @click="showApprovalModal=false" class="lc-btn-sec">Batal</button><button type="submit" class="lc-btn-primary"><i class="ri-check-line"></i> Submit</button></div>
@@ -271,6 +271,7 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { locationApi, uploadApi } from '../../services/api'
 import { useToastStore } from '../../stores/toast'
+import SearchSelect from '../../components/SearchSelect.vue'
 
 const toast = useToastStore()
 const route = useRoute()
@@ -282,6 +283,11 @@ const showSurveyModal = ref(false)
 const showApprovalModal = ref(false)
 const surveyForm = reactive({ survey_date:'', nama_surveyor:'', hasil_survey:'', catatan_survey:'', estimasi_omzet:0, estimasi_bep:0 })
 const approvalForm = reactive({ decision:'', note:'' })
+const decisionOptions = [
+  { value: 'approved', label: 'Setujui' },
+  { value: 'rejected', label: 'Tolak' },
+  { value: 'revision', label: 'Minta Revisi' },
+]
 
 const tabs = [
   { key:'overview', label:'Ringkasan', icon:'ri-eye-line' },
